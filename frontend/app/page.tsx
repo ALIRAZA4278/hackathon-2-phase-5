@@ -419,7 +419,7 @@ export default function LandingPage() {
               {!session?.user && (
                 <Link href="/signup">
                   <button
-                    className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-white text-blue-600 rounded-lg shadow-xl hover:shadow-2xl hover:-translate-y-0.5 hover:bg-gray-50 transition-all duration-300"
+                    className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-white text-black rounded-lg shadow-xl hover:shadow-2xl hover:-translate-y-0.5 hover:bg-gray-50 transition-all duration-300"
                   >
                     Get Started for Free
                     <svg
