@@ -3,7 +3,7 @@
  * Generates a JWT for authenticated users to use with the backend API.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "../auth/[...all]/route";
+import { auth } from "@/lib/auth-server";
 import { SignJWT } from "jose";
 
 export async function GET(request: NextRequest) {
