@@ -37,6 +37,8 @@ allowed_origins = [
     settings.frontend_url,
     "https://todo-app-chatbot-roan.vercel.app/",
     "https://localhost:3000",
+    "https://todo-app-chatbot-one.vercel.app",
+    "https://todo-app-chatbot-roan.vercel.app",
 ]
 # Filter out empty strings and duplicates
 allowed_origins = list(set(filter(None, allowed_origins)))
