@@ -32,9 +32,18 @@ app = FastAPI(
 
 # Configure CORS
 settings = get_settings()
+# Allow multiple origins for flexibility (localhost + production)
+allowed_origins = [
+    settings.frontend_url,
+    "http://localhost:3000",
+    "https://localhost:3000",
+]
+# Filter out empty strings and duplicates
+allowed_origins = list(set(filter(None, allowed_origins)))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
