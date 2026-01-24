@@ -2,121 +2,375 @@
 ================================================================================
 SYNC IMPACT REPORT
 ================================================================================
-Version Change: 1.0.0 → 2.0.0 (MAJOR - Phase III AI Chatbot System Addition)
+Version Change: 2.0.0 → 3.0.0 (MAJOR - Phase IV Kubernetes Deployment System)
 
 Modified Principles:
-  - Principle VIII "Technology Stack Compliance" → Extended with AI/Agent stack
-  - Principle X "Quality Assurance" → Extended with AI/chatbot validation rules
+  - System Mission → Extended with Cloud-Native Deployment Objective
+  - Principle VIII "Technology Stack Compliance" → Extended with K8s/Docker/Helm stack
+  - Principle X "Quality Assurance" → Extended with deployment validation rules
 
 Added Sections:
-  - AI Architecture Overview
-  - Agent Constitution (Primary Agent + Logical Sub-Agents)
-  - MCP Tool Governance
-  - Data & Memory Constitution (Conversation, Message models)
-  - Natural Language Guarantees
-  - Response Quality Standards
-  - Error Handling Constitution
-  - Frontend UX Constitution (Chat UI)
-  - Core Design Principles (Agent-First, Stateless, Tool-Driven, Seamless Integration)
-  - Phase III Scope Boundaries
+  - Phase IV Purpose & Intent
+  - Phase IV Scope Boundaries
+  - Infrastructure Principles (NON-NEGOTIABLE)
+  - Docker Constitution
+  - Kubernetes Constitution
+  - Helm Chart Constitution
+  - Security & Configuration Rules (Extended)
+  - AI DevOps Governance (Gordon, kubectl-ai, Kagent)
+  - Phase IV Validation & Success Criteria
+  - Phase IV Failure Conditions (Hard Stops)
+  - Relationship to Previous Phases
 
 Removed Sections:
-  - "Out of Scope" items moved to "In Scope" for Phase III
+  - None (Phase III sections retained for context)
 
 Templates Requiring Updates:
-  ✅ plan-template.md - Constitution Check section compatible with new AI principles
-  ✅ spec-template.md - Requirements section aligns with FR/NFR format + AI requirements
-  ✅ tasks-template.md - Phase structure supports AI agent/MCP tool development
+  ✅ plan-template.md - Constitution Check section compatible with K8s deployment
+  ✅ spec-template.md - Requirements section aligns with infra-as-code specs
+  ✅ tasks-template.md - Phase structure supports Docker/K8s/Helm tasks
 
 Follow-up TODOs: None
 
 ================================================================================
 -->
 
-# Hackathon Todo – Phase III Constitution
+# Hackathon Todo – Phase IV Constitution
 
-**Phase Name**: Full-Stack AI Chatbot System
+**Phase Name**: Local Kubernetes Deployment of Cloud-Native Todo AI Chatbot
 **Development Model**: Spec-Driven, Agentic Dev Stack
-**Implementation Tooling**: Claude Code + Spec-Kit Plus
+**Implementation Tooling**: Claude Code + Spec-Kit Plus + AI DevOps Agents
 
-This constitution serves as the single source of truth for how the system is designed, built, secured, and evolved. All plans, tasks, implementations, and evaluations MUST comply with this document.
+This constitution serves as the single source of truth for how the system is containerized, deployed, and operated. All plans, tasks, implementations, and evaluations MUST comply with this document.
 
 ## System Mission
 
-Design and implement a production-grade, AI-powered Todo Management Platform that extends the existing Full-Stack Todo Application by integrating an intelligent, conversational AI chatbot.
+Deploy the completed Phase III Todo AI Chatbot as a fully containerized, cloud-native system on a local Kubernetes cluster using Minikube.
 
-The chatbot MUST allow users to manage todos entirely via natural language, using a stateless, scalable backend architecture, powered by OpenAI Agents SDK (using Gemini API key) and MCP (Model Context Protocol) tools.
+This phase evaluates:
+- Cloud-native thinking
+- Infrastructure automation discipline
+- Stateless architecture correctness
+- AI-assisted DevOps usage
+- Production-grade deployment practices
 
-This system MUST be built using the Agentic Dev Stack workflow with NO manual coding, relying strictly on Spec-Kit Plus and Claude Code.
+**This phase is NOT about adding new application features. It is about operational excellence.**
 
-## Core Design Principles (NON-NEGOTIABLE)
+The system MUST be built using the Agentic Dev Stack workflow with NO manual coding, relying strictly on Spec-Kit Plus, Claude Code, and AI DevOps agents.
 
-### Agent-First Architecture
+## Phase IV Purpose & Intent
 
-All business logic is driven by AI agents. No hard-coded intent routing. AI decides tool usage.
+Phase IV exists to transform the completed Phase III Todo AI Chatbot into a fully containerized, cloud-native system deployed on a local Kubernetes cluster using Minikube.
+
+**Goals:**
+- Demonstrate cloud-native deployment competency
+- Validate stateless architecture design
+- Showcase AI-assisted DevOps workflows
+- Produce a reproducible, production-credible deployment
+
+## Phase IV Scope Boundaries
+
+### In Scope (Phase IV)
+
+- Docker containerization of frontend and backend
+- Kubernetes deployment using Minikube
+- Helm charts for application packaging
+- AI-assisted DevOps using Docker AI Agent (Gordon), kubectl-ai, and Kagent
+- Secure configuration using environment variables
+- Stateless deployment validation
+- Service exposure via Minikube
+
+### Out of Scope (Phase IV)
+
+- New application logic
+- New AI behaviors or MCP tools
+- Cloud provider deployments (AWS/GCP/Azure)
+- Manual infrastructure configuration outside specs
+- Database deployment (Neon PostgreSQL remains external)
+- CI/CD pipelines
+- Ingress controllers or load balancers beyond Minikube defaults
+
+## Authoritative Stack (Phase IV)
+
+The only allowed tools and technologies for Phase IV are:
+
+| Tool | Purpose | Status |
+|------|---------|--------|
+| Docker Desktop | Container runtime | Required |
+| Docker AI Agent (Gordon) | Image creation/optimization | Preferred |
+| Minikube | Local Kubernetes cluster | Required |
+| Helm | Kubernetes package manager | Required |
+| kubectl-ai | AI-assisted kubectl operations | Preferred |
+| Kagent | Advanced AI Ops agent | Optional |
+| Claude Code + Spec-Kit Plus | Development workflow | Required |
+
+Manual shell scripting, ad-hoc YAML editing, or undocumented steps are FORBIDDEN unless explicitly authorized in specs.
+
+## Infrastructure Principles (NON-NEGOTIABLE)
+
+### I. Everything is Containerized
+
+Frontend and backend MUST run only inside containers. No local execution assumptions.
 
 **Rules:**
-- The AI agent MUST interpret user intent
-- The AI agent MUST select appropriate MCP tools
-- No static if/else routing for user commands
-- Agent behavior MUST be governed by system prompts, not code branches
+- Each service MUST have its own Dockerfile
+- Images MUST be minimal and use explicit base images
+- Containers MUST expose only required ports
+- No application code MUST run directly on host machine during deployment
 
-### Stateless Server
+### II. Stateless by Design
 
-Backend holds zero in-memory state. All context persists in the database. Safe for horizontal scaling and restarts.
-
-**Rules:**
-- Server MUST NOT store conversation state in memory
-- Server MUST NOT use server-side sessions for chat context
-- All conversation history MUST be loaded from database per request
-- System MUST survive server restarts without data loss
-
-### Tool-Driven AI (MCP)
-
-AI can ONLY modify system state via MCP tools. MCP tools are deterministic, stateless, and auditable.
+Pods MUST hold no state. All state lives in Neon PostgreSQL or external services.
 
 **Rules:**
-- AI agent MUST NOT directly access database
-- All task mutations MUST go through MCP tools
-- MCP tools MUST validate inputs before execution
-- MCP tools MUST return structured, predictable outputs
+- Server MUST NOT store any data in container filesystem
+- All conversation history MUST be loaded from external database per request
+- System MUST survive pod restarts without data loss
+- No PersistentVolumeClaims for application data
 
-### Seamless Integration
+### III. Declarative Infrastructure
 
-AI chatbot integrates into the existing backend. No parallel systems or duplicated logic.
-
-**Rules:**
-- Chatbot MUST reuse existing Task model and database
-- Chatbot MUST use existing authentication system
-- No separate task storage for AI-created tasks
-- All tasks appear in both chat and traditional UI
-
-### Professional UX
-
-Chat UI MUST feel premium, modern, and reliable. AI responses MUST be friendly, concise, and confident.
+Kubernetes resources MUST be defined declaratively. Helm charts are the single deployment authority.
 
 **Rules:**
-- Chat interface MUST clearly separate user and AI messages
-- Loading states MUST be visible during AI processing
-- Error messages MUST be user-friendly, not technical
-- AI responses MUST confirm actions taken
+- All Kubernetes resources MUST be defined in YAML/Helm templates
+- No imperative `kubectl create` or `kubectl run` commands for deployment
+- Helm charts MUST be the single source of truth for deployment configuration
+- Values.yaml MUST control all configurable parameters
 
-## Existing System Context
+### IV. Reproducibility
 
-The AI chatbot extends the existing Full-Stack Todo Application with:
+Any machine with Minikube MUST be able to reproduce the deployment. No hidden steps or manual tweaks.
 
-| Component | Technology | Status |
-|-----------|------------|--------|
-| Frontend | Next.js (App Router) | Already implemented |
-| Backend | Python FastAPI | Already implemented |
-| Database | Neon Serverless PostgreSQL | Already implemented |
-| ORM | SQLModel | Already implemented |
-| Authentication | Better Auth | Already implemented |
-| Users | Identified by email/user_id | Already implemented |
+**Rules:**
+- Complete deployment MUST be achievable via documented Helm commands
+- No manual post-deployment fixes allowed
+- All dependencies MUST be explicitly declared
+- Environment setup MUST be documented and scriptable
 
-The chatbot MUST NOT replace existing logic — it MUST reuse and integrate with it.
+### V. AI-Assisted Operations First
 
-## Core Principles (Inherited from Phase II)
+Prefer Gordon, kubectl-ai, and Kagent for DevOps actions. Human-written commands are fallback only.
+
+**Rules:**
+- Docker AI (Gordon) MUST be used for Dockerfile generation and optimization when available
+- kubectl-ai MUST be preferred for deployment, scaling, and debugging operations
+- Kagent SHOULD be used for cluster health analysis
+- Manual commands MUST be justified when AI tools are bypassed
+
+## Docker Constitution
+
+### Dockerfile Requirements
+
+Each service (frontend, backend) MUST have its own Dockerfile following these rules:
+
+**Image Design:**
+- Use explicit base image tags (no `latest`)
+- Use multi-stage builds to minimize final image size
+- Expose only the required port (3000 for frontend, 8000 for backend)
+- Set appropriate user (non-root where possible)
+
+**Security:**
+- Secrets MUST NOT be baked into images
+- No sensitive data in build args
+- No credentials in Dockerfile comments or labels
+
+**Build Context:**
+- Include appropriate .dockerignore
+- Minimize build context size
+- Cache layers effectively
+
+**Docker AI (Gordon) Usage:**
+- MUST be used for initial Dockerfile generation when available
+- MUST be used for Dockerfile optimization suggestions
+- MUST be used for explaining Docker build behavior
+
+### Container Runtime
+
+- Containers MUST work with Docker Desktop on Windows/Mac/Linux
+- Containers MUST be compatible with Minikube's Docker daemon
+- Environment variables MUST be injectable at runtime
+
+## Kubernetes Constitution
+
+### Cluster Requirements
+
+- Minikube is the ONLY allowed cluster for Phase IV
+- Cluster MUST be startable with default settings
+- No custom Minikube addons required (except those explicitly documented)
+
+### Resource Requirements
+
+Each application component MUST have:
+
+| Resource | Frontend | Backend |
+|----------|----------|---------|
+| Deployment | Required | Required |
+| Service | Required | Required |
+| ConfigMap | As needed | As needed |
+| Secret | Not for frontend | Required |
+
+### Deployment Specifications
+
+**Replicas:**
+- MUST be configurable via Helm values
+- Default: 1 replica per service
+- MUST support scaling without breaking functionality
+
+**Pod Specifications:**
+- MUST be restart-safe (RestartPolicy: Always)
+- SHOULD have readiness probes
+- SHOULD have liveness probes
+- MUST have resource requests defined
+
+**Service Specifications:**
+- Frontend: NodePort or LoadBalancer (Minikube tunnel)
+- Backend: ClusterIP (internal only) or NodePort
+- Port mappings MUST be explicit
+
+### kubectl-ai Governance
+
+kubectl-ai is a first-class operational interface:
+
+- MUST be used for natural-language cluster queries
+- MUST be used for deployment troubleshooting
+- MUST be used for scaling operations
+- MAY be used for resource creation (with review)
+
+### Kagent Governance
+
+Kagent is for cluster analysis and optimization:
+
+- SHOULD be used for cluster health checks
+- SHOULD be used for optimization suggestions
+- MUST NOT bypass Kubernetes security boundaries
+
+## Helm Chart Constitution
+
+### Chart Structure
+
+One chart per service is MANDATORY:
+
+```
+helm/
+├── frontend/
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   └── templates/
+│       ├── deployment.yaml
+│       ├── service.yaml
+│       └── configmap.yaml
+├── backend/
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   └── templates/
+│       ├── deployment.yaml
+│       ├── service.yaml
+│       ├── secret.yaml
+│       └── configmap.yaml
+└── todo-app/           # Optional umbrella chart
+    ├── Chart.yaml
+    └── values.yaml
+```
+
+### Values.yaml Requirements
+
+Values.yaml MUST control:
+
+| Parameter | Description | Required |
+|-----------|-------------|----------|
+| image.repository | Docker image name | Yes |
+| image.tag | Docker image tag | Yes |
+| replicaCount | Number of pod replicas | Yes |
+| service.type | Kubernetes service type | Yes |
+| service.port | Service port | Yes |
+| env.* | Environment variables | Yes |
+| resources.requests | CPU/Memory requests | Yes |
+| resources.limits | CPU/Memory limits | Recommended |
+
+**No hard-coded values inside templates.** All configuration MUST flow through values.yaml.
+
+### Chart Metadata
+
+Chart.yaml MUST include:
+- name: Service identifier
+- version: Chart version (semver)
+- appVersion: Application version
+- description: Brief chart description
+
+## Security & Configuration Rules
+
+### Secrets Management
+
+Secrets (JWT secret, Gemini API key, Database URL) MUST be:
+- Stored as Kubernetes Secrets (not plain ConfigMaps)
+- Injected as environment variables
+- NEVER committed to Git
+- NEVER exposed to frontend bundles
+
+**Required Secrets:**
+| Secret | Used By | Injected As |
+|--------|---------|-------------|
+| BETTER_AUTH_SECRET | Backend | Env var |
+| DATABASE_URL | Backend | Env var |
+| GEMINI_API_KEY | Backend | Env var |
+
+### Environment Variables
+
+| Variable | Service | Source |
+|----------|---------|--------|
+| BETTER_AUTH_SECRET | Backend | Secret |
+| DATABASE_URL | Backend | Secret |
+| GEMINI_API_KEY | Backend | Secret |
+| NEXT_PUBLIC_API_URL | Frontend | ConfigMap |
+| PORT | Both | values.yaml |
+
+### Git Security
+
+- .gitignore MUST exclude all secrets
+- values.yaml MUST NOT contain actual secret values
+- Use values-local.yaml (gitignored) for local overrides
+
+## AI DevOps Governance
+
+### Docker AI (Gordon)
+
+**Responsibilities:**
+- Image creation and Dockerfile optimization
+- Explaining Docker build/run behavior
+- Suggesting image size reductions
+- Debugging container issues
+
+**Constraints:**
+- MUST NOT bypass Docker security boundaries
+- MUST NOT embed secrets in images
+- MUST NOT create privileged containers without justification
+
+### kubectl-ai
+
+**Responsibilities:**
+- Deployment, scaling, debugging via natural language
+- Cluster state queries
+- Resource inspection and troubleshooting
+
+**Constraints:**
+- MUST NOT delete production resources without confirmation
+- MUST NOT modify system namespaces
+- MUST NOT bypass RBAC when configured
+
+### Kagent
+
+**Responsibilities:**
+- Cluster health analysis
+- Resource optimization suggestions
+- Deployment verification
+
+**Constraints:**
+- Read-only analysis preferred
+- MUST NOT make changes without explicit approval
+- MUST NOT access secrets unless necessary
+
+## Core Principles (Inherited from Phase II/III)
 
 ### I. Spec-Driven Development (NON-NEGOTIABLE)
 
@@ -138,9 +392,9 @@ All development MUST follow the Agentic Development Stack workflow:
 The developer's role is specification authorship, not code authorship.
 
 **Rules:**
-- All code MUST be written by Claude Code
-- Manual code edits are forbidden
-- Developer interaction is limited to: writing specs, reviewing outputs, approving PRs
+- All Dockerfiles, Helm charts, and Kubernetes manifests MUST be written by Claude Code
+- Manual edits are forbidden
+- Developer interaction is limited to: writing specs, reviewing outputs, approving deployments
 - Any code written outside Claude Code violates this constitution
 
 ### III. Authentication-First Security
@@ -149,438 +403,82 @@ Every API interaction MUST be authenticated and authorized.
 
 **Rules:**
 - All API endpoints MUST require a valid JWT token
-- JWT MUST be sent in the Authorization header as: `Authorization: Bearer <token>`
-- Requests without a token MUST return 401 Unauthorized
-- Requests with invalid or expired tokens MUST be rejected
+- JWT MUST be sent in the Authorization header
 - Backend MUST decode JWT to extract user identity
-- Both frontend and backend MUST use the same JWT signing secret via `BETTER_AUTH_SECRET`
+- Kubernetes MUST NOT bypass authentication requirements
 
 ### IV. User Data Isolation (NON-NEGOTIABLE)
 
 No user may access another user's data under any circumstance.
 
 **Rules:**
-- Backend MUST extract `user_id` from the JWT token
-- The `user_id` in the URL path MUST match the authenticated user's ID
-- Any mismatch MUST result in a 403 Forbidden response
-- Every database query MUST filter by authenticated `user_id`
-- No cross-user data access is permitted
-- AI agent MUST only access authenticated user's tasks and conversations
+- Backend MUST extract user_id from the JWT token
+- Every database query MUST filter by authenticated user_id
+- Deployment MUST NOT change user isolation behavior
 
-### V. RESTful API Consistency
-
-The API MUST follow consistent REST conventions.
-
-**Rules:**
-- All routes MUST be prefixed with `/api/`
-- Every request MUST be authenticated
-- Every response MUST only include tasks owned by the authenticated user
-- Task ownership MUST be validated on every operation
-- HTTP methods: GET (read), POST (create), PUT (full update), PATCH (partial update), DELETE (remove)
-
-### VI. Relational Data Integrity
-
-The database schema MUST follow relational best practices.
-
-**Rules:**
-- All foreign keys MUST be enforced
-- Required fields MUST have NOT NULL constraints
-- Indexes MUST exist on frequently queried columns (`user_id`, `completed`, `conversation_id`)
-- All database access MUST use SQLModel ORM
-- Schema changes MUST be migration-based
-
-### VII. Monorepo Structure
-
-The project MUST be organized as a monorepo with clear layer separation.
-
-**Rules:**
-- Frontend and backend MUST be in separate directories (`/frontend/`, `/backend/`)
-- Each layer MUST have its own `CLAUDE.md` with layer-specific instructions
-- Specs MUST be referenced using `@specs/<path>.md` notation
-- Shared configuration MUST be at repository root
-
-### VIII. Technology Stack Compliance
+### V. Technology Stack Compliance (Extended)
 
 The technology stack is fixed and non-negotiable.
 
-**Frontend:**
-- Next.js 16+ using App Router
-- TypeScript
-- Tailwind CSS
-- Better Auth (JavaScript-based authentication)
-- Chat UI components
-
-**Backend:**
-- Python FastAPI
-- SQLModel ORM
-- RESTful API architecture
-- OpenAI Agents SDK (with Gemini API key via OpenAI-compatible interface)
-- MCP tools for AI agent actions
-
-**Database:**
-- Neon Serverless PostgreSQL
-- SQLModel-managed schema
-- Conversation and Message tables for chat persistence
-
-**Authentication:**
-- Better Auth (frontend)
-- JWT-based verification (backend)
-
-**AI Framework:**
-- OpenAI Agents SDK
-- Gemini API key via OpenAI-compatible interface
-- Agent Runner handles execution
-
-### IX. Separation of Concerns
-
-The system MUST maintain clear boundaries between layers.
-
-**Frontend Responsibilities:**
-- UI rendering and routing
-- Authentication state management via Better Auth
-- JWT token attachment to all API requests
-- Client-side validation and user feedback
-- Chat UI rendering and message display
-
-**Backend Responsibilities:**
-- RESTful API endpoint exposure
-- JWT token verification on every request
-- Task ownership enforcement
-- Database communication via SQLModel
-- AI agent orchestration
-- MCP tool execution
-
-**Database Responsibilities:**
-- Data persistence
-- Relational integrity enforcement
-- User, task, conversation, and message storage
-
-### X. Quality Assurance
-
-The system MUST meet quality standards before deployment.
-
-**Rules:**
-- User data isolation MUST be verified
-- Authentication MUST be tested for all endpoints
-- Persistent storage MUST be validated
-- API behavior MUST be consistent across endpoints
-- Frontend and backend concerns MUST remain separated
-- AI agent MUST correctly interpret natural language commands
-- MCP tools MUST execute without side effects beyond intended action
-
-## AI Architecture Overview
-
-### High-Level Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              CHAT UI (Browser)                               │
-│  User types: "add task buy groceries"                                        │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    FRONTEND (Next.js + Better Auth)                          │
-│  POST /api/{user_id}/chat with JWT token                                     │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                            JWT Token + Message
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          BACKEND (FastAPI)                                   │
-│  1. Verify JWT, extract user_id                                              │
-│  2. Load conversation history from DB                                        │
-│  3. Invoke AI agent with context + MCP tools                                 │
-│  4. Agent selects and calls MCP tools                                        │
-│  5. Persist new messages to DB                                               │
-│  6. Return AI response to frontend                                           │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          MCP TOOLS (Stateless)                               │
-│  add_task │ list_tasks │ complete_task │ delete_task │ update_task           │
-│  get_my_user_info │ search_tasks                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         DATABASE (Neon PostgreSQL)                           │
-│  tasks │ conversations │ messages │ user (Better Auth)                       │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-## Agent Constitution
-
-### Primary Agent: Todo Orchestrator Agent
-
-The system SHALL define a single primary AI agent responsible for:
-
-- Understanding user intent
-- Selecting MCP tools
-- Chaining multiple tools if needed
-- Generating final responses
-
-The agent MUST:
-
-- Never hallucinate data (MUST use MCP tools to verify)
-- Never bypass MCP tools for task mutations
-- Always confirm user-affecting actions
-- Handle ambiguous commands by asking clarification
-
-### Logical Sub-Agents (Behavioral Responsibilities)
-
-These define behavioral modes, NOT separate processes:
-
-| Sub-Agent | Responsibility |
-|-----------|----------------|
-| Task Management Intelligence | Adds, lists, updates, completes, deletes todos |
-| Conversation Context Intelligence | Restores chat context from database, enables continuity |
-| User Context Awareness | Understands authenticated user, responds to identity questions |
-| Confirmation & UX Intelligence | Produces friendly, professional responses |
-| Error Recovery Intelligence | Graceful handling of missing tasks, invalid input |
-
-## MCP Tool Governance
-
-### MCP Server Rules
-
-MCP tools are the ONLY allowed interface for task mutations.
-
-MCP tools MUST:
-- Be stateless (no internal memory between calls)
-- Validate all inputs before execution
-- Persist results to database
-- Return structured outputs in consistent format
-
-### Required MCP Tools
-
-| Tool | Purpose | Parameters |
-|------|---------|------------|
-| `add_task` | Create todo | title (required), description (optional), due_date (optional) |
-| `list_tasks` | Retrieve todos | status, limit, offset, sort_by, sort_order |
-| `toggle_task_completion` | Mark complete/incomplete | task_id |
-| `delete_task` | Remove todo | task_id |
-| `get_my_user_info` | Get user account info | (none) |
-| `search_tasks` | Search by keyword | keyword, status |
-
-### MCP Tool Response Format
-
-All MCP tools MUST return:
-
-```json
-{
-  "status": "success" | "error",
-  "message": "Human-readable description",
-  "data": <relevant data or null>
-}
-```
-
-## Data & Memory Constitution
-
-### Database Is The Only Memory
-
-The system SHALL persist:
-- Tasks
-- Conversations
-- Messages
-
-No server-side memory, cache, or session state is allowed.
-
-### Required Models
-
-**Task** (existing)
-
-| Field | Type | Constraints |
-|-------|------|-------------|
-| id | integer | PRIMARY KEY, AUTOINCREMENT |
-| user_id | string | FOREIGN KEY → users.id, NOT NULL |
-| title | string | NOT NULL, LENGTH 1-200 |
-| description | string | NULLABLE, MAX LENGTH 1000 |
-| completed | boolean | NOT NULL, DEFAULT false |
-| created_at | timestamp | NOT NULL, DEFAULT NOW() |
-| updated_at | timestamp | NOT NULL, DEFAULT NOW() |
-
-**Conversation** (new)
-
-| Field | Type | Constraints |
-|-------|------|-------------|
-| id | integer | PRIMARY KEY, AUTOINCREMENT |
-| user_id | string | FOREIGN KEY → users.id, NOT NULL |
-| created_at | timestamp | NOT NULL, DEFAULT NOW() |
-| updated_at | timestamp | NOT NULL, DEFAULT NOW() |
-
-**Message** (new)
-
-| Field | Type | Constraints |
-|-------|------|-------------|
-| id | integer | PRIMARY KEY, AUTOINCREMENT |
-| user_id | string | FOREIGN KEY → users.id, NOT NULL |
-| conversation_id | integer | FOREIGN KEY → conversations.id, NOT NULL |
-| role | string | NOT NULL, ENUM: 'user', 'assistant' |
-| content | text | NOT NULL |
-| created_at | timestamp | NOT NULL, DEFAULT NOW() |
-
-### Required Indexes
-
-- `tasks.user_id` - Query optimization for user task lists
-- `tasks.completed` - Filter optimization for completion status
-- `conversations.user_id` - Query optimization for user conversations
-- `messages.conversation_id` - Query optimization for conversation history
-- `messages.user_id` - User isolation enforcement
-
-## Natural Language Guarantees
-
-The agent MUST correctly interpret:
-
-| Intent | Example Phrases |
-|--------|-----------------|
-| Task creation | "add task buy groceries", "create a todo for meeting", "remind me to call mom" |
-| Task listing (all) | "show my tasks", "list todos", "what do I have to do" |
-| Task listing (pending) | "show pending tasks", "what's not done", "incomplete todos" |
-| Task listing (completed) | "show completed tasks", "what did I finish" |
-| Task completion | "mark buy groceries as done", "complete task 5", "finish the meeting task" |
-| Task deletion | "delete task buy groceries", "remove todo 5", "cancel the meeting task" |
-| Task search | "find tasks about groceries", "search for meeting" |
-| User identity | "who am I", "my email kya hai", "meri account info dikhao" |
-| Ambiguous commands | Agent MUST ask for clarification |
-
-## Response Quality Standards
-
-AI responses MUST be:
-
-- **Clear**: No ambiguity about what action was taken
-- **Friendly**: Warm, conversational tone
-- **Professional**: No slang, typos, or unprofessional language
-- **Action-confirming**: Always state what was done
-- **UI-ready**: No excessive markdown, code blocks, or formatting clutter
-
-### Response Examples
-
-| Scenario | Good Response | Bad Response |
-|----------|---------------|--------------|
-| Task created | "Your task 'Buy groceries' has been added successfully." | "Task added to database with id 47" |
-| Task not found | "I couldn't find that task. Would you like me to show your list?" | "Error: Task not found in database" |
-| Ambiguous | "I found 3 tasks with 'meeting'. Which one did you mean?" | "Multiple results, please be specific" |
-
-## Error Handling Constitution
-
-The system MUST:
-
-- Never crash on bad input
-- Never expose stack traces to users
-- Offer recovery suggestions
-- Log errors for debugging (server-side only)
-
-### Error Response Examples
-
-| Error Type | User Message |
-|------------|--------------|
-| Task not found | "I couldn't find that task. Would you like me to show your list?" |
-| Invalid input | "I need a title for the task. What would you like to call it?" |
-| Database error | "Something went wrong on my end. Please try again in a moment." |
-| Authentication error | "Please sign in to manage your tasks." |
-
-## Frontend UX Constitution
-
-### Chat UI Requirements
-
-The Chat UI MUST:
-
-- Feel premium and modern
-- Support long conversations with scrolling
-- Show loading states during AI processing
-- Clearly separate user vs AI messages (different colors/alignment)
-- Handle reconnects gracefully
-- Persist conversation across page refreshes
-- Be responsive (mobile-friendly)
-
-### Message Display
-
-| Message Type | Visual Treatment |
-|--------------|------------------|
-| User message | Right-aligned, primary color background |
-| AI message | Left-aligned, neutral background |
-| Loading | Typing indicator or spinner |
-| Error | Red/warning styling, retry option |
-
-## API Constitution (Extended)
-
-### Chat Endpoint
-
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| POST | `/api/{user_id}/chat` | Send message to AI agent |
-| GET | `/api/{user_id}/conversations` | List user's conversations |
-| GET | `/api/{user_id}/conversations/{id}/messages` | Get conversation history |
-
-### Chat Request/Response
-
-**Send Message (POST /api/{user_id}/chat)**
-
-```json
-// Request
-{
-  "message": "add task buy groceries",
-  "conversation_id": 123  // optional, creates new if omitted
-}
-
-// Response
-{
-  "conversation_id": 123,
-  "message": {
-    "id": 456,
-    "role": "assistant",
-    "content": "Your task 'Buy groceries' has been added successfully.",
-    "created_at": "2026-01-16T19:30:00Z"
-  }
-}
-```
-
-## Authentication & Security Constitution
-
-### Security Rules (Extended for Chat)
-
-| Scenario | Required Response |
-|----------|-------------------|
-| No token provided | 401 Unauthorized |
-| Invalid token | 401 Unauthorized |
-| Expired token | 401 Unauthorized |
-| URL user_id ≠ JWT user_id | 403 Forbidden |
-| Valid token + matching user_id | Allow request |
-| AI tries to access other user's tasks | Block at MCP tool level |
-| AI tries to access other user's conversations | Block at query level |
-
-### Environment Variables (Extended)
-
-| Variable | Purpose | Required By |
-|----------|---------|-------------|
-| `BETTER_AUTH_SECRET` | JWT signing/verification | Frontend + Backend |
-| `DATABASE_URL` | Neon PostgreSQL connection | Backend |
-| `GEMINI_API_KEY` | AI model access | Backend |
-| `OPENAI_API_BASE` | OpenAI-compatible endpoint for Gemini | Backend |
-
-## Phase III Scope Boundaries
-
-### In Scope (Phase III)
-
-- AI chatbot integration
-- Natural language task management
-- MCP tools for all task operations
-- Conversation persistence
-- Chat UI components
-- User identity queries via chatbot
-- Task search via chatbot
-
-### Out of Scope (Phase III)
-
-- Task sharing between users
-- Task categories or tags
-- Due dates with reminders/notifications
-- Real-time updates (WebSockets)
-- Voice input
-- Multi-language support beyond English
-- File attachments to tasks
+**Application Stack (from Phase III):**
+- Frontend: Next.js 16+ / TypeScript / Tailwind CSS / Better Auth
+- Backend: Python FastAPI / SQLModel / OpenAI Agents SDK
+- Database: Neon Serverless PostgreSQL
+- Authentication: Better Auth / JWT
+
+**Infrastructure Stack (Phase IV):**
+- Container Runtime: Docker Desktop
+- Orchestration: Kubernetes via Minikube
+- Packaging: Helm charts
+- AI DevOps: Gordon, kubectl-ai, Kagent
+
+## Phase IV Validation & Success Criteria
+
+Phase IV is considered successful ONLY if:
+
+| Criterion | Validation Method |
+|-----------|-------------------|
+| Frontend runs in Minikube | `kubectl get pods` shows Running |
+| Backend runs in Minikube | `kubectl get pods` shows Running |
+| Pods survive restarts | `kubectl delete pod` + verify recovery |
+| Helm install works | `helm install` completes without errors |
+| Helm upgrade works | `helm upgrade` completes without errors |
+| Scaling works | `kubectl scale` + functionality test |
+| Application accessible | `minikube service` opens working app |
+| No local dependencies | Fresh Minikube deployment succeeds |
+| Secrets not exposed | No secrets in Git or image layers |
+
+## Phase IV Failure Conditions (Hard Stops)
+
+Execution MUST STOP if:
+
+| Violation | Severity |
+|-----------|----------|
+| Application runs outside Kubernetes | CRITICAL |
+| Secrets are hard-coded | CRITICAL |
+| State is stored in pods | CRITICAL |
+| Helm is bypassed for deployment | HIGH |
+| Manual fixes required after deployment | HIGH |
+| AI DevOps tools ignored without justification | MEDIUM |
+| Images use `latest` tag | MEDIUM |
+| No resource requests defined | LOW |
+
+## Relationship to Previous Phases
+
+### Phase IV MUST:
+
+- Deploy the Phase III system as-is
+- Preserve all authentication, AI, and MCP behavior
+- NOT modify application logic
+- NOT add new features
+
+### Phase IV does NOT replace:
+
+- Phase I (Backend Foundation)
+- Phase II (Full-Stack Integration)
+- Phase III (AI Chatbot System)
+
+**Phase IV operationalizes Phases I-III.**
 
 ## Governance
 
@@ -595,23 +493,25 @@ The Chat UI MUST:
 
 | Change Type | Version Bump | Example |
 |-------------|--------------|---------|
-| Backward-incompatible principle removal/redefinition | MAJOR | 1.0.0 → 2.0.0 |
-| New principle or materially expanded guidance | MINOR | 1.0.0 → 1.1.0 |
-| Clarifications, wording, typo fixes | PATCH | 1.0.0 → 1.0.1 |
+| Backward-incompatible principle removal/redefinition | MAJOR | 2.0.0 → 3.0.0 |
+| New principle or materially expanded guidance | MINOR | 3.0.0 → 3.1.0 |
+| Clarifications, wording, typo fixes | PATCH | 3.0.0 → 3.0.1 |
 
 ### Compliance Review
 
 - All PRs MUST verify compliance with this constitution
 - Complexity MUST be justified against constitutional principles
 - Security violations result in immediate rejection
-- AI behavior MUST be tested against natural language guarantees
+- Infrastructure changes MUST be tested against success criteria
 
 ### Final Authority Statement
 
-This constitution is the **highest authority** for Phase III.
+This constitution is the **highest authority** for Phase IV.
 
 All plans, tasks, implementations, and evaluations MUST comply with this document.
 
 **If a requirement is not written in a spec, it MUST NOT be implemented.**
 
-**Version**: 2.0.0 | **Ratified**: 2026-01-08 | **Last Amended**: 2026-01-16
+The goal is a **cloud-native, hackathon-ready, production-credible local deployment**.
+
+**Version**: 3.0.0 | **Ratified**: 2026-01-08 | **Last Amended**: 2026-01-23

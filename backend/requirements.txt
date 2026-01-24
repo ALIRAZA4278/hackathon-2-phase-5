@@ -12,6 +12,7 @@ python-jose[cryptography]>=3.3.0
 
 # Environment configuration
 python-dotenv>=1.0.0
+pydantic-settings>=2.0.0
 
 # CORS support (included with fastapi)
 # Pydantic (included with fastapi/sqlmodel)

@@ -55,6 +55,12 @@ app.include_router(chat.router, prefix="/api")
 
 
 @app.get("/")
+async def root():
+    """Root endpoint."""
+    return {"status": "healthy", "service": "hackathon-todo-api"}
+
+
+@app.get("/health")
 async def health_check():
-    """Health check endpoint."""
+    """Health check endpoint for Kubernetes probes."""
     return {"status": "healthy", "service": "hackathon-todo-api"}
