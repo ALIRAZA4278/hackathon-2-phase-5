@@ -5,9 +5,9 @@
 # Image Configuration
 # ============================================================================
 image:
-  repository: ghcr.io/todo-app/recurring-consumer
+  repository: ghcr.io/aliraza4278/hackathon-2-phase-5/recurring-consumer
   tag: "latest"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 # ============================================================================
 # Replica Configuration

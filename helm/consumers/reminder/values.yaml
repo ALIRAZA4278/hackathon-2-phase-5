@@ -5,9 +5,9 @@
 # Image Configuration
 # ============================================================================
 image:
-  repository: ghcr.io/todo-app/reminder-consumer
+  repository: ghcr.io/aliraza4278/hackathon-2-phase-5/reminder-consumer
   tag: "latest"
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 # ============================================================================
 # Replica Configuration

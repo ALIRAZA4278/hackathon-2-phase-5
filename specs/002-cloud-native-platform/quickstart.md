@@ -101,16 +101,33 @@ helm install observability helm/infrastructure/observability/
 - [ ] Prometheus metrics available
 - [ ] Grafana dashboards loaded
 
-## Cloud Deployment (AKS)
+## Cloud Deployment (Oracle OKE)
 
 ```bash
-# Authenticate to AKS
-az aks get-credentials --resource-group <rg> --name <cluster>
+# Install OCI CLI
+pip install oci-cli
+oci setup config
+
+# Download kubeconfig from OKE
+oci ce cluster create-kubeconfig \
+  --cluster-id <your-cluster-ocid> \
+  --file $HOME/.kube/config \
+  --region <your-region> \
+  --token-version 2.0.0
+
+# Verify
+kubectl get nodes
 
 # Initialize Dapr
 dapr init --kubernetes --wait
 
-# Deploy via CI/CD (push to main)
+# Deploy infrastructure + app
+helm install redpanda helm/infrastructure/redpanda/
+helm install redis helm/infrastructure/redis/
+kubectl apply -f dapr/components/
+helm install todo-app helm/todo-app/
+
+# Or deploy via CI/CD (push to main)
 git push origin main
 # GitHub Actions handles: build → test → scan → push → deploy
 ```

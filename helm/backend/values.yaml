@@ -7,9 +7,9 @@
 # Image Configuration
 # ============================================================================
 image:
-  repository: todo-backend
-  tag: "1.0.0"
-  pullPolicy: IfNotPresent
+  repository: ghcr.io/aliraza4278/hackathon-2-phase-5/backend
+  tag: "latest"
+  pullPolicy: Always
 
 # ============================================================================
 # Replica Configuration

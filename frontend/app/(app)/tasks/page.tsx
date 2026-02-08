@@ -26,12 +26,20 @@ function TasksPageContent() {
   const [token, setToken] = useState<string | null>(null);
 
   // Query params from TaskList (search, filter, sort)
-  const [queryParams, setQueryParams] = useState<Partial<TaskQueryParams>>({});
-  const queryParamsRef = useRef(queryParams);
+  const queryParamsRef = useRef<Partial<TaskQueryParams>>({});
+  const hasFetchedOnce = useRef(false);
 
   // Get user ID and name from session
   const userId = session?.user?.id;
   const userName = session?.user?.name || session?.user?.email?.split("@")[0] || "there";
+
+  // Stable refs to avoid re-creating fetchTasks on every render
+  const tokenRef = useRef(token);
+  tokenRef.current = token;
+  const userIdRef = useRef(userId);
+  userIdRef.current = userId;
+  const showToastRef = useRef(showToast);
+  showToastRef.current = showToast;
 
   // Fetch API token when session changes
   useEffect(() => {
@@ -44,37 +52,45 @@ function TasksPageContent() {
     fetchToken();
   }, [session]);
 
-  // Fetch tasks with optional query params
+  // Stable fetchTasks that never changes identity
   const fetchTasks = useCallback(
     async (params?: Partial<TaskQueryParams>) => {
-      if (!userId || !token) return;
+      const currentUserId = userIdRef.current;
+      const currentToken = tokenRef.current;
+      if (!currentUserId || !currentToken) return;
+
+      // Only show skeleton on initial load, not on refetches
+      if (!hasFetchedOnce.current) {
+        setIsLoading(true);
+      }
 
       try {
-        setIsLoading(true);
-        const response = await tasksApi.list(userId, token, params);
+        const response = await tasksApi.list(currentUserId, currentToken, params);
         setTasks(response.tasks);
+        hasFetchedOnce.current = true;
       } catch (error) {
         if (error instanceof ApiException) {
-          showToast(error.detail, "error");
+          showToastRef.current(error.detail, "error");
         } else {
-          showToast("Failed to load tasks", "error");
+          showToastRef.current("Failed to load tasks", "error");
         }
       } finally {
         setIsLoading(false);
       }
     },
-    [userId, token, showToast]
+    [] // No deps - uses refs for stable identity
   );
 
-  // Load tasks on mount
+  // Load tasks when token becomes available
   useEffect(() => {
-    fetchTasks(queryParamsRef.current);
-  }, [fetchTasks]);
+    if (userId && token) {
+      fetchTasks(queryParamsRef.current);
+    }
+  }, [userId, token, fetchTasks]);
 
   // Handle query param changes from TaskList
   const handleQueryParamsChange = useCallback(
     (params: Partial<TaskQueryParams>) => {
-      setQueryParams(params);
       queryParamsRef.current = params;
       fetchTasks(params);
     },

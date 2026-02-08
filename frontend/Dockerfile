@@ -26,6 +26,10 @@ COPY . .
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Build-time env vars (NEXT_PUBLIC_* are inlined at build time)
+ARG NEXT_PUBLIC_API_URL=http://todo-backend:8000
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 # Build the application
 RUN npm run build
 

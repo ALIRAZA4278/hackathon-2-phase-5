@@ -4,7 +4,7 @@
  * TaskSearch component with debounced search input.
  * Per specs/features/task-crud.md - Phase V search functionality.
  */
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface TaskSearchProps {
   onSearch: (query: string) => void;
@@ -15,24 +15,14 @@ export function TaskSearch({ onSearch, initialValue = "" }: TaskSearchProps) {
   const [query, setQuery] = useState(initialValue);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
+  // Stable ref for onSearch to prevent effect re-triggers on callback identity change
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
 
   // Sync with external initialValue changes
   useEffect(() => {
     setQuery(initialValue);
   }, [initialValue]);
-
-  // Debounced search callback
-  const debouncedSearch = useCallback(
-    (value: string) => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-      debounceTimer.current = setTimeout(() => {
-        onSearch(value);
-      }, 300);
-    },
-    [onSearch]
-  );
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -43,14 +33,19 @@ export function TaskSearch({ onSearch, initialValue = "" }: TaskSearchProps) {
     };
   }, []);
 
-  // Trigger debounced search on query change (skip first render)
+  // Trigger debounced search on query change only (skip first render)
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    debouncedSearch(query);
-  }, [query, debouncedSearch]);
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    debounceTimer.current = setTimeout(() => {
+      onSearchRef.current(query);
+    }, 300);
+  }, [query]);
 
   const handleClear = () => {
     setQuery("");

@@ -6,8 +6,8 @@
 # ============================================================================
 image:
   repository: redpandadata/redpanda
-  tag: "latest"
-  pullPolicy: IfNotPresent
+  tag: "v24.1.1"
+  pullPolicy: Always
 
 # ============================================================================
 # Replica Configuration

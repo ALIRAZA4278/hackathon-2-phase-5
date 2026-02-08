@@ -20,9 +20,9 @@ backend:
   enabled: true
   replicaCount: 1
   image:
-    repository: todo-backend
-    tag: "1.0.0"
-    pullPolicy: IfNotPresent
+    repository: ghcr.io/aliraza4278/hackathon-2-phase-5/backend
+    tag: "latest"
+    pullPolicy: Always
   dapr:
     enabled: true
     appId: "todo-backend"
@@ -48,11 +48,11 @@ frontend:
   enabled: true
   replicaCount: 1
   image:
-    repository: todo-frontend
-    tag: "1.0.0"
-    pullPolicy: IfNotPresent
+    repository: ghcr.io/aliraza4278/hackathon-2-phase-5/frontend
+    tag: "latest"
+    pullPolicy: Always
   service:
-    type: NodePort
+    type: LoadBalancer
   dapr:
     enabled: true
     appId: "todo-frontend"
@@ -73,8 +73,9 @@ reminder:
   enabled: true
   replicaCount: 1
   image:
-    repository: ghcr.io/todo-app/reminder-consumer
+    repository: ghcr.io/aliraza4278/hackathon-2-phase-5/reminder-consumer
     tag: "latest"
+    pullPolicy: Always
   dapr:
     enabled: true
     appId: "reminder-consumer"
@@ -88,8 +89,9 @@ recurring:
   enabled: true
   replicaCount: 1
   image:
-    repository: ghcr.io/todo-app/recurring-consumer
+    repository: ghcr.io/aliraza4278/hackathon-2-phase-5/recurring-consumer
     tag: "latest"
+    pullPolicy: Always
   dapr:
     enabled: true
     appId: "recurring-consumer"
@@ -103,8 +105,9 @@ audit:
   enabled: true
   replicaCount: 1
   image:
-    repository: ghcr.io/todo-app/audit-consumer
+    repository: ghcr.io/aliraza4278/hackathon-2-phase-5/audit-consumer
     tag: "latest"
+    pullPolicy: Always
   dapr:
     enabled: true
     appId: "audit-consumer"
@@ -118,8 +121,9 @@ notification:
   enabled: true
   replicaCount: 1
   image:
-    repository: ghcr.io/todo-app/notification-consumer
+    repository: ghcr.io/aliraza4278/hackathon-2-phase-5/notification-consumer
     tag: "latest"
+    pullPolicy: Always
   dapr:
     enabled: true
     appId: "notification-consumer"
@@ -137,7 +141,8 @@ redpanda:
   replicaCount: 1
   image:
     repository: redpandadata/redpanda
-    tag: "latest"
+    tag: "v24.1.1"
+    pullPolicy: Always
   resources:
     requests:
       cpu: 100m
