@@ -25,7 +25,12 @@ export type {
   ApiError,
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// In production/K8s, use /backend proxy (Next.js rewrites handle routing to backend service).
+// In local dev, NEXT_PUBLIC_API_URL points directly to http://localhost:8000.
+const API_BASE_URL =
+  typeof window !== "undefined" && process.env.NODE_ENV === "production"
+    ? "/backend"
+    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 /**
  * Custom error class for API errors.
