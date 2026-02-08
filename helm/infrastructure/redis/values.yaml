@@ -5,7 +5,7 @@
 # Image Configuration
 # ============================================================================
 image:
-  repository: redis
+  repository: docker.io/library/redis
   tag: "7-alpine"
   pullPolicy: Always
 
