@@ -1,0 +1,12 @@
+apiVersion: v2
+name: redis
+description: A Helm chart for Redis (in-memory data store)
+type: application
+version: 0.1.0
+appVersion: "7-alpine"
+keywords:
+  - redis
+  - cache
+  - database
+maintainers:
+  - name: Phase V Cloud-Native Deployment

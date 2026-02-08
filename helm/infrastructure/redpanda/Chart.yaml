@@ -1,0 +1,13 @@
+apiVersion: v2
+name: redpanda
+description: A Helm chart for Redpanda (Kafka-compatible streaming platform)
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - redpanda
+  - kafka
+  - streaming
+  - messaging
+maintainers:
+  - name: Phase V Cloud-Native Deployment

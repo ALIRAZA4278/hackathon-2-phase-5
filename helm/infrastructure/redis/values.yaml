@@ -1,0 +1,69 @@
+# Redis Helm Chart Values
+# File: helm/infrastructure/redis/values.yaml
+
+# ============================================================================
+# Image Configuration
+# ============================================================================
+image:
+  repository: redis
+  tag: "7-alpine"
+  pullPolicy: IfNotPresent
+
+# ============================================================================
+# Replica Configuration
+# ============================================================================
+replicaCount: 1
+
+# ============================================================================
+# Service Configuration
+# ============================================================================
+service:
+  type: ClusterIP
+  port: 6379
+  targetPort: 6379
+
+# ============================================================================
+# Resource Limits
+# ============================================================================
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+# ============================================================================
+# Probes
+# ============================================================================
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# ============================================================================
+# Pod Configuration
+# ============================================================================
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+# ============================================================================
+# Node Selection (optional)
+# ============================================================================
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

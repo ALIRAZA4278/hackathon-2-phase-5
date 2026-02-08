@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     # AI Chatbot Configuration (Phase III)
     gemini_api_key: str = ""
 
+    # Phase V: Dapr Configuration
+    dapr_http_port: int = 3500
+    dapr_grpc_port: int = 50001
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

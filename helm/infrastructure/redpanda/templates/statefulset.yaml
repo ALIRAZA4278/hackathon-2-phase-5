@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "redpanda.fullname" . }}
+  labels:
+    {{- include "redpanda.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "redpanda.fullname" . }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "redpanda.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "redpanda.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              /usr/bin/rpk redpanda start \
+                --kafka-addr 0.0.0.0:9092 \
+                --advertise-kafka-addr $(hostname -f):9092 \
+                --pandaproxy-addr 0.0.0.0:8082 \
+                --advertise-pandaproxy-addr $(hostname -f):8082 \
+                --rpc-addr 0.0.0.0:33145 \
+                --advertise-rpc-addr $(hostname -f):33145 \
+                --smp 1 \
+                --memory 512M \
+                --reserve-memory 0M \
+                --overprovisioned \
+                --node-id {{ .Values.config.nodeId }} \
+                --check=false
+          ports:
+            - name: kafka
+              containerPort: {{ .Values.service.kafka.targetPort }}
+              protocol: TCP
+            - name: admin
+              containerPort: {{ .Values.service.admin.targetPort }}
+              protocol: TCP
+            - name: pandaproxy
+              containerPort: {{ .Values.service.pandaproxy.targetPort }}
+              protocol: TCP
+            - name: rpc
+              containerPort: 33145
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: datadir
+              mountPath: /var/lib/redpanda/data
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: datadir
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.persistence.storageClassName }}
+        storageClassName: {{ .Values.persistence.storageClassName }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
+  {{- else }}
+  volumes:
+    - name: datadir
+      emptyDir: {}
+  {{- end }}

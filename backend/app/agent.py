@@ -1,16 +1,25 @@
 """
 AI Agent configuration for Todo Chatbot.
 Per specs/001-ai-chatbot/plan.md - Phase 5: AI Agent Construction
+Phase V extensions: advanced task management tools, event emission.
 
 Uses OpenAI SDK with Gemini API via base_url configuration.
 Implements tool-calling pattern for task management operations.
 """
 import json
+import time
+import asyncio
+import logging
 import os
 from typing import Dict, Any, List, Optional
 from openai import OpenAI
 from app.config import get_settings
 from app import mcp_tools
+from app.events.producer import publish_event
+from app.events.schemas import create_ai_tool_event
+from app.events.topics import AI_EVENTS
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -35,19 +44,32 @@ MODEL = "gemini-2.5-flash-lite"
 
 
 # ============================================================================
-# System Prompt
+# System Prompt (T048: Updated for all 13 tools)
 # ============================================================================
 
 SYSTEM_PROMPT = """You are TodoBot, a friendly and helpful AI assistant for managing todo tasks. You communicate naturally in both English and Roman Urdu based on how the user writes to you.
 
 ## CAPABILITIES
-You can help users with these task operations (use the provided tools):
-- **add_task**: Create new tasks
+You can help users with these 13 task operations (use the provided tools):
+
+### Core Task Management
+- **add_task**: Create new tasks (supports priority, tags, due_date, reminder_time)
 - **list_tasks**: View tasks with optional filtering (all/pending/completed)
 - **toggle_task_completion**: Mark tasks as complete or reopen them
-- **delete_task**: Remove tasks (ALWAYS ask for confirmation first!)
-- **search_tasks**: Find tasks by keyword
+- **delete_task**: Remove tasks (requires confirmation - call with confirmed=false first, then confirmed=true after user confirms)
+- **search_tasks**: Find tasks by keyword in title, description, or tags
 - **get_my_user_info**: Show user's account information
+
+### Advanced Task Features
+- **set_due_date**: Set or update a task's due date
+- **set_priority**: Set task priority (low, medium, high, urgent)
+- **add_tags**: Add tags to a task for organization
+- **schedule_reminder**: Schedule a reminder notification for a task
+- **create_recurring**: Set up recurring task rules (daily, weekly, monthly, yearly, custom)
+
+### Filtering & Sorting
+- **filter_tasks**: Filter tasks by status, priority, tags, or due date range
+- **sort_tasks**: Sort tasks by created_at, due_date, priority, or title
 
 ## CRITICAL RULES
 
@@ -58,49 +80,70 @@ You can help users with these task operations (use the provided tools):
    - Match the user's description to actual task IDs
    - Use the correct task_id in subsequent operations
 
-3. **Delete Confirmation**: Before calling delete_task, you MUST:
+3. **Delete Confirmation Flow**: When deleting a task:
+   - First call delete_task with confirmed=false to get the confirmation prompt
    - Show the user the task title they're about to delete
-   - Ask "Are you sure you want to delete '[task title]'?"
-   - Only proceed if user confirms with "yes", "haan", "confirm", etc.
-   - If user says "no", "nahi", "cancel", etc., do NOT delete
+   - Ask for confirmation: "Are you sure you want to delete '[task title]'?"
+   - Only call delete_task with confirmed=true if user confirms with "yes", "haan", "confirm", etc.
+   - If user says "no", "nahi", "cancel", etc., do NOT proceed with deletion
 
 4. **User Isolation**: You can ONLY access the current user's tasks. Never attempt to access other users' data.
 
 5. **Language Matching**: Respond in the same language style the user uses:
-   - English → English
-   - Roman Urdu → Roman Urdu
-   - Mixed → You can mix naturally
+   - English -> English
+   - Roman Urdu -> Roman Urdu
+   - Mixed -> You can mix naturally
+
+6. **Advanced Features Usage**:
+   - When creating tasks, offer to set priority, tags, or due date if the user mentions them
+   - Use filter_tasks when users ask to see tasks by priority, tags, or date range
+   - Use sort_tasks when users ask to see tasks ordered by a specific field
+   - Use set_priority when users want to change a task's importance
+   - Use add_tags when users want to categorize tasks
+   - Use schedule_reminder when users want to be reminded about a task
+   - Use create_recurring for tasks that repeat on a schedule
+
+7. **Multi-turn Context**: Remember previous messages in the conversation. If the user refers to a task discussed earlier, use that context rather than asking again.
 
 ## RESPONSE STYLE
 
 - Be conversational, warm, and helpful
 - Confirm actions you've taken with specific details
 - When listing tasks, format them clearly:
-  - ✅ for completed tasks
-  - ⬜ for pending tasks
+  - Use checkmarks for completed tasks and squares for pending tasks
   - Include task ID for reference
+  - Show priority, tags, and due date when present
 - Offer helpful suggestions when appropriate
 - Keep responses concise but informative
 - Never expose technical errors - translate to friendly messages
 
 ## EXAMPLES
 
-User: "add task buy groceries"
-→ Call add_task with title="buy groceries"
-→ Respond: "Done! I've added 'buy groceries' to your list."
+User: "add high priority task buy groceries with tag shopping due tomorrow"
+-> Call add_task with title="buy groceries", priority="high", tags=["shopping"], due_date="YYYY-MM-DD"
+-> Respond with task details including priority and due date
 
-User: "meri tasks dikhao"
-→ Call list_tasks
-→ Respond with formatted task list in Roman Urdu
+User: "show me all urgent tasks"
+-> Call filter_tasks with priority="urgent"
+-> Respond with filtered task list
+
+User: "sort my tasks by priority"
+-> Call sort_tasks with sort_by="priority", sort_order="desc"
+-> Respond with sorted task list
+
+User: "remind me about task 5 tomorrow at 9am"
+-> Call schedule_reminder with task_id=5, trigger_at="YYYY-MM-DDT09:00:00Z"
+-> Confirm the reminder was scheduled
+
+User: "make task 3 repeat every week"
+-> Call create_recurring with task_id=3, frequency="weekly"
+-> Confirm the recurring rule was set
 
 User: "delete groceries task"
-→ Call list_tasks to find the task
-→ Ask: "Kya aap 'buy groceries' delete karna chahte hain?"
-→ Wait for confirmation before calling delete_task
-
-User: "who am I?"
-→ Call get_my_user_info
-→ Respond with user's email and name
+-> Call list_tasks to find the task
+-> Call delete_task with confirmed=false to get task info
+-> Ask: "Are you sure you want to delete 'buy groceries'?"
+-> Wait for confirmation before calling delete_task with confirmed=true
 
 ## ERROR HANDLING
 
@@ -112,14 +155,16 @@ User: "who am I?"
 
 # ============================================================================
 # Tool Definitions (OpenAI Function Format)
+# T045-T047: All 13 tools with proper JSON schemas
 # ============================================================================
 
 TOOLS = [
+    # --- Core Tools (updated schemas) ---
     {
         "type": "function",
         "function": {
             "name": "add_task",
-            "description": "Create a new todo task for the user. Use when user wants to add, create, or make a new task.",
+            "description": "Create a new todo task for the user. Use when user wants to add, create, or make a new task. Supports priority, tags, due_date, and reminder_time.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -130,6 +175,24 @@ TOOLS = [
                     "description": {
                         "type": "string",
                         "description": "Optional task description (max 1000 characters)"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["low", "medium", "high", "urgent"],
+                        "description": "Task priority level (default: medium)"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of tags for categorization"
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "description": "Due date in YYYY-MM-DD format"
+                    },
+                    "reminder_time": {
+                        "type": "string",
+                        "description": "Reminder time in ISO 8601 format (e.g., 2025-01-20T09:00:00Z)"
                     }
                 },
                 "required": ["title"]
@@ -175,13 +238,17 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "delete_task",
-            "description": "Permanently delete a task. IMPORTANT: Always confirm with the user before calling this function by showing them the task title.",
+            "description": "Permanently delete a task. Requires confirmation: first call with confirmed=false to get task info, then call with confirmed=true after user confirms.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "task_id": {
                         "type": "integer",
                         "description": "The ID of the task to delete"
+                    },
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Set to true to confirm deletion. First call should be false to get confirmation prompt."
                     }
                 },
                 "required": ["task_id"]
@@ -192,13 +259,13 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "search_tasks",
-            "description": "Search tasks by keyword in title or description. Use when user wants to find, search, or look for specific tasks.",
+            "description": "Search tasks by keyword in title, description, or tags. Use when user wants to find, search, or look for specific tasks.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "keyword": {
                         "type": "string",
-                        "description": "Search term to match in task title or description"
+                        "description": "Search term to match in task title, description, or tags"
                     },
                     "status": {
                         "type": "string",
@@ -221,6 +288,190 @@ TOOLS = [
                 "required": []
             }
         }
+    },
+    # --- New Phase V Tools ---
+    {
+        "type": "function",
+        "function": {
+            "name": "set_due_date",
+            "description": "Set or update the due date for a task. Use when user wants to set a deadline or due date.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {
+                        "type": "integer",
+                        "description": "The ID of the task"
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "description": "Due date in YYYY-MM-DD format"
+                    }
+                },
+                "required": ["task_id", "due_date"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "schedule_reminder",
+            "description": "Schedule a reminder notification for a task. Use when user wants to be reminded about a task at a specific time.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {
+                        "type": "integer",
+                        "description": "The ID of the task"
+                    },
+                    "trigger_at": {
+                        "type": "string",
+                        "description": "When to trigger the reminder in ISO 8601 format (e.g., 2025-01-20T09:00:00Z)"
+                    }
+                },
+                "required": ["task_id", "trigger_at"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_recurring",
+            "description": "Set up a recurring rule for a task. Use when user wants a task to repeat on a schedule (daily, weekly, monthly, etc.).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {
+                        "type": "integer",
+                        "description": "The ID of the task"
+                    },
+                    "frequency": {
+                        "type": "string",
+                        "enum": ["daily", "weekly", "monthly", "yearly", "custom"],
+                        "description": "How often the task recurs"
+                    },
+                    "interval": {
+                        "type": "integer",
+                        "description": "Interval multiplier (e.g., 2 for every 2 weeks). Default: 1"
+                    },
+                    "day_of_week": {
+                        "type": "integer",
+                        "description": "Day of week for weekly recurrence (0=Monday, 6=Sunday)"
+                    },
+                    "day_of_month": {
+                        "type": "integer",
+                        "description": "Day of month for monthly recurrence (1-31)"
+                    },
+                    "cron_expression": {
+                        "type": "string",
+                        "description": "Custom cron expression (for frequency=custom)"
+                    }
+                },
+                "required": ["task_id", "frequency"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "set_priority",
+            "description": "Set or change the priority level of a task. Use when user wants to mark a task as urgent, high priority, etc.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {
+                        "type": "integer",
+                        "description": "The ID of the task"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["low", "medium", "high", "urgent"],
+                        "description": "Priority level to set"
+                    }
+                },
+                "required": ["task_id", "priority"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "add_tags",
+            "description": "Add tags to a task for organization. Tags are deduplicated automatically. Use when user wants to categorize or label tasks.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {
+                        "type": "integer",
+                        "description": "The ID of the task"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of tag strings to add"
+                    }
+                },
+                "required": ["task_id", "tags"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "filter_tasks",
+            "description": "Filter tasks by multiple criteria: status, priority, tags, due date range. Use when user wants to see specific subsets of tasks.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": ["pending", "completed"],
+                        "description": "Filter by completion status"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["low", "medium", "high", "urgent"],
+                        "description": "Filter by priority level"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Filter by tags (tasks matching any of these tags)"
+                    },
+                    "due_date_from": {
+                        "type": "string",
+                        "description": "Start of due date range (YYYY-MM-DD)"
+                    },
+                    "due_date_to": {
+                        "type": "string",
+                        "description": "End of due date range (YYYY-MM-DD)"
+                    }
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "sort_tasks",
+            "description": "Sort and return all tasks by a specified field. Use when user wants to see tasks ordered by priority, due date, title, or creation date.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "sort_by": {
+                        "type": "string",
+                        "enum": ["created_at", "due_date", "priority", "title"],
+                        "description": "Field to sort by"
+                    },
+                    "sort_order": {
+                        "type": "string",
+                        "enum": ["asc", "desc"],
+                        "description": "Sort direction (default: desc)"
+                    }
+                },
+                "required": ["sort_by"]
+            }
+        }
     }
 ]
 
@@ -229,20 +480,30 @@ TOOLS = [
 # Tool Dispatcher
 # ============================================================================
 
-# Map tool names to actual MCP tool functions
+# Map tool names to actual MCP tool functions (T045-T047: all 13 tools)
 TOOL_FUNCTIONS = {
+    # Core tools
     "add_task": mcp_tools.add_task,
     "list_tasks": mcp_tools.list_tasks,
     "toggle_task_completion": mcp_tools.toggle_task_completion,
     "delete_task": mcp_tools.delete_task,
     "search_tasks": mcp_tools.search_tasks,
     "get_my_user_info": mcp_tools.get_my_user_info,
+    # Phase V: Advanced tools
+    "set_due_date": mcp_tools.set_due_date,
+    "schedule_reminder": mcp_tools.schedule_reminder,
+    "create_recurring": mcp_tools.create_recurring,
+    "set_priority": mcp_tools.set_priority,
+    "add_tags": mcp_tools.add_tags,
+    "filter_tasks": mcp_tools.filter_tasks,
+    "sort_tasks": mcp_tools.sort_tasks,
 }
 
 
 async def execute_tool(user_id: str, tool_call) -> Dict[str, Any]:
     """
     Execute a tool call with user_id injection for security.
+    Emits an ai_tool_called event after execution (fire-and-forget).
 
     Args:
         user_id: The authenticated user's ID (from JWT)
@@ -271,11 +532,52 @@ async def execute_tool(user_id: str, tool_call) -> Dict[str, Any]:
     # Inject user_id (security: never trust user-provided user_id)
     arguments["user_id"] = user_id
 
+    # T049: Measure execution time and emit event
+    start = time.time()
+
     # Execute the tool
     try:
         result = await tool_func(**arguments)
+
+        # Calculate duration
+        duration_ms = int((time.time() - start) * 1000)
+
+        # Extract entity_id from arguments if present
+        entity_id = str(arguments.get("task_id", "none"))
+
+        # Fire-and-forget event emission
+        try:
+            event_data = create_ai_tool_event(
+                entity_id=entity_id,
+                user_id=user_id,
+                tool_name=function_name,
+                arguments={k: v for k, v in arguments.items() if k != "user_id"},
+                result_status=result.get("status", "unknown"),
+                duration_ms=duration_ms
+            )
+            asyncio.create_task(publish_event(AI_EVENTS, event_data))
+        except Exception as event_err:
+            logger.debug(f"Event emission failed (non-blocking): {event_err}")
+
         return result
     except Exception as e:
+        # Calculate duration even on failure
+        duration_ms = int((time.time() - start) * 1000)
+
+        # Fire-and-forget error event
+        try:
+            event_data = create_ai_tool_event(
+                entity_id=str(arguments.get("task_id", "none")),
+                user_id=user_id,
+                tool_name=function_name,
+                arguments={k: v for k, v in arguments.items() if k != "user_id"},
+                result_status="error",
+                duration_ms=duration_ms
+            )
+            asyncio.create_task(publish_event(AI_EVENTS, event_data))
+        except Exception as event_err:
+            logger.debug(f"Event emission failed (non-blocking): {event_err}")
+
         return {
             "status": "error",
             "message": f"Tool execution failed: {str(e)}",

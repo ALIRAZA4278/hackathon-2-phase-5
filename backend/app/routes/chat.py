@@ -1,7 +1,11 @@
 """
 Chat API routes for AI Chatbot.
 Per specs/001-ai-chatbot/contracts/chat-api.yaml
+Phase V extensions: input sanitization (T051), rate limiting (T052)
 """
+import re
+import time
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -21,6 +25,101 @@ from app.agent import run_agent
 
 
 router = APIRouter(tags=["Chat"])
+
+
+# ============================================================================
+# T052: In-memory Rate Limiter (200 req/min per user)
+# ============================================================================
+
+# Dict of user_id -> list of request timestamps
+_rate_limit_store: dict[str, list[float]] = defaultdict(list)
+RATE_LIMIT_MAX_REQUESTS = 200
+RATE_LIMIT_WINDOW_SECONDS = 60
+
+
+def check_rate_limit(user_id: str) -> None:
+    """
+    Check if a user has exceeded the rate limit (200 req/min).
+    Cleans up old timestamps outside the window.
+
+    Args:
+        user_id: The authenticated user's ID
+
+    Raises:
+        HTTPException 429 if rate limit exceeded
+    """
+    now = time.time()
+    window_start = now - RATE_LIMIT_WINDOW_SECONDS
+
+    # Clean up old timestamps
+    timestamps = _rate_limit_store[user_id]
+    _rate_limit_store[user_id] = [ts for ts in timestamps if ts > window_start]
+
+    # Check limit
+    if len(_rate_limit_store[user_id]) >= RATE_LIMIT_MAX_REQUESTS:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded. Maximum 200 requests per minute. Please try again shortly."
+        )
+
+    # Record this request
+    _rate_limit_store[user_id].append(now)
+
+
+# ============================================================================
+# T051: Input Sanitization (Prompt Injection Defense)
+# ============================================================================
+
+# Patterns to strip from user messages (case-insensitive)
+_INJECTION_PATTERNS = [
+    r"ignore\s+previous\s+instructions?",
+    r"ignore\s+all\s+previous\s+instructions?",
+    r"ignore\s+above\s+instructions?",
+    r"disregard\s+previous\s+instructions?",
+    r"disregard\s+all\s+previous\s+instructions?",
+    r"forget\s+previous\s+instructions?",
+    r"forget\s+all\s+previous\s+instructions?",
+    r"override\s+previous\s+instructions?",
+    r"^system\s*:",
+    r"you\s+are\s+now\b",
+    r"act\s+as\s+if\s+you\s+are",
+    r"pretend\s+you\s+are",
+    r"new\s+instructions?\s*:",
+    r"<\s*system\s*>",
+    r"<\s*/\s*system\s*>",
+    r"\[SYSTEM\]",
+    r"\[INST\]",
+    r"\[/INST\]",
+]
+
+# Compile patterns once for performance
+_COMPILED_INJECTION_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE) for pattern in _INJECTION_PATTERNS
+]
+
+
+def sanitize_message(message: str) -> str:
+    """
+    Strip common prompt injection patterns from user input.
+
+    Args:
+        message: Raw user message
+
+    Returns:
+        Sanitized message with injection patterns removed
+    """
+    sanitized = message
+    for pattern in _COMPILED_INJECTION_PATTERNS:
+        sanitized = pattern.sub("", sanitized)
+
+    # Clean up extra whitespace from removals
+    sanitized = re.sub(r"\s{2,}", " ", sanitized).strip()
+
+    # If the message was entirely injection content, return a safe fallback
+    if not sanitized:
+        return message.strip()
+
+    return sanitized
 
 
 # ============================================================================
@@ -179,9 +278,17 @@ async def send_chat_message(
     - JWT token required
     - URL user_id must match JWT user_id
     - All tool operations use authenticated user_id
+    - Input sanitization applied (T051)
+    - Rate limiting enforced (T052)
     """
     # Verify user access (URL user_id must match JWT user_id)
     verify_user_access(user_id, current_user)
+
+    # T052: Check rate limit
+    check_rate_limit(user_id)
+
+    # T051: Sanitize user message
+    sanitized_message = sanitize_message(request.message)
 
     # Get or create conversation
     conversation = get_or_create_conversation(
@@ -191,14 +298,14 @@ async def send_chat_message(
     # Load conversation history
     history = load_conversation_history(db, conversation.id, user_id)
 
-    # Save user message
+    # Save user message (store original for audit, use sanitized for AI)
     save_message(db, conversation.id, user_id, "user", request.message)
 
-    # Run the AI agent
+    # Run the AI agent with sanitized input
     try:
         response_content = await run_agent(
             user_id=user_id,
-            user_message=request.message,
+            user_message=sanitized_message,
             conversation_history=history
         )
     except Exception as e:

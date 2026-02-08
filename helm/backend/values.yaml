@@ -30,7 +30,7 @@ service:
 resources:
   requests:
     cpu: 100m
-    memory: 256Mi
+    memory: 128Mi
   limits:
     cpu: 500m
     memory: 512Mi
@@ -55,6 +55,15 @@ secrets:
   databaseUrl: ""
   geminiApiKey: ""
   betterAuthSecret: ""
+
+# ============================================================================
+# Dapr Configuration
+# ============================================================================
+dapr:
+  enabled: true
+  appId: "todo-backend"
+  appPort: 8000
+  logLevel: "info"
 
 # ============================================================================
 # Probes

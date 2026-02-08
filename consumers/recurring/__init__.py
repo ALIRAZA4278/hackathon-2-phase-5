@@ -1,0 +1,1 @@
+"""Recurring task consumer service."""

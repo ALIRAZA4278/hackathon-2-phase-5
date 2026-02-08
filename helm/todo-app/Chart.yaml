@@ -1,0 +1,69 @@
+apiVersion: v2
+name: todo-app
+description: Phase V Cloud-Native AI Todo Platform - Complete Application Stack
+version: 0.1.0
+type: application
+keywords:
+  - todo
+  - ai
+  - cloud-native
+  - microservices
+  - dapr
+  - kafka
+maintainers:
+  - name: Phase V Cloud-Native Deployment
+
+dependencies:
+  # Application Services
+  - name: todo-backend
+    version: ">=1.0.0"
+    repository: "file://../backend"
+    alias: backend
+    condition: backend.enabled
+
+  - name: todo-frontend
+    version: ">=1.0.0"
+    repository: "file://../frontend"
+    alias: frontend
+    condition: frontend.enabled
+
+  # Consumer Services
+  - name: reminder-consumer
+    version: ">=0.1.0"
+    repository: "file://../consumers/reminder"
+    alias: reminder
+    condition: reminder.enabled
+
+  - name: recurring-consumer
+    version: ">=0.1.0"
+    repository: "file://../consumers/recurring"
+    alias: recurring
+    condition: recurring.enabled
+
+  - name: audit-consumer
+    version: ">=0.1.0"
+    repository: "file://../consumers/audit"
+    alias: audit
+    condition: audit.enabled
+
+  - name: notification-consumer
+    version: ">=0.1.0"
+    repository: "file://../consumers/notification"
+    alias: notification
+    condition: notification.enabled
+
+  # Infrastructure Services (optional)
+  - name: redpanda
+    version: ">=0.1.0"
+    repository: "file://../infrastructure/redpanda"
+    condition: redpanda.enabled
+
+  - name: redis
+    version: ">=0.1.0"
+    repository: "file://../infrastructure/redis"
+    condition: redis.enabled
+
+  - name: observability
+    version: ">=0.1.0"
+    repository: "file://../infrastructure/observability"
+    condition: observability.enabled

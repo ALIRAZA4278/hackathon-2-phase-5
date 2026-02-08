@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "redpanda.fullname" . }}
+  labels:
+    {{- include "redpanda.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  clusterIP: None  # Headless service for StatefulSet
+  ports:
+    - port: {{ .Values.service.kafka.port }}
+      targetPort: {{ .Values.service.kafka.targetPort }}
+      protocol: TCP
+      name: kafka
+    - port: {{ .Values.service.admin.port }}
+      targetPort: {{ .Values.service.admin.targetPort }}
+      protocol: TCP
+      name: admin
+    - port: {{ .Values.service.pandaproxy.port }}
+      targetPort: {{ .Values.service.pandaproxy.targetPort }}
+      protocol: TCP
+      name: pandaproxy
+  selector:
+    {{- include "redpanda.selectorLabels" . | nindent 4 }}

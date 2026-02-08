@@ -1,0 +1,148 @@
+================================================================================
+Phase V Cloud-Native AI Todo Platform
+================================================================================
+
+Thank you for installing {{ .Chart.Name }}-{{ .Chart.Version }}!
+
+Your release is named: {{ .Release.Name }}
+Deployed to namespace: {{ .Release.Namespace }}
+
+================================================================================
+INSTALLED COMPONENTS
+================================================================================
+
+Application Services:
+{{- if .Values.backend.enabled }}
+  ✓ Backend API (FastAPI + Dapr)
+{{- end }}
+{{- if .Values.frontend.enabled }}
+  ✓ Frontend (Next.js + Dapr)
+{{- end }}
+
+Consumer Services:
+{{- if .Values.reminder.enabled }}
+  ✓ Reminder Consumer
+{{- end }}
+{{- if .Values.recurring.enabled }}
+  ✓ Recurring Consumer
+{{- end }}
+{{- if .Values.audit.enabled }}
+  ✓ Audit Consumer
+{{- end }}
+{{- if .Values.notification.enabled }}
+  ✓ Notification Consumer
+{{- end }}
+
+Infrastructure:
+{{- if .Values.redpanda.enabled }}
+  ✓ Redpanda (Kafka-compatible)
+{{- end }}
+{{- if .Values.redis.enabled }}
+  ✓ Redis
+{{- end }}
+{{- if .Values.observability.enabled }}
+  ✓ Observability Stack (Prometheus + Grafana)
+{{- end }}
+
+================================================================================
+ACCESSING YOUR APPLICATION
+================================================================================
+
+1. Frontend (Next.js):
+{{- if .Values.frontend.enabled }}
+   Get the application URL:
+
+   export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ .Release.Name }}-frontend)
+   export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+   echo "Frontend URL: http://$NODE_IP:$NODE_PORT"
+{{- else }}
+   Frontend is disabled.
+{{- end }}
+
+2. Backend API:
+{{- if .Values.backend.enabled }}
+   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ .Release.Name }}-backend 8000:8000
+   Then access: http://localhost:8000/docs
+{{- else }}
+   Backend is disabled.
+{{- end }}
+
+3. Grafana Dashboard:
+{{- if .Values.observability.enabled }}
+{{- if .Values.observability.grafana.enabled }}
+   Access via NodePort:
+   echo "Grafana URL: http://<NODE_IP>:{{ .Values.observability.grafana.service.nodePort }}"
+
+   Default credentials:
+   Username: {{ .Values.observability.grafana.adminUser }}
+   Password: {{ .Values.observability.grafana.adminPassword }}
+
+   IMPORTANT: Change the default password in production!
+{{- end }}
+{{- else }}
+   Observability stack is disabled.
+{{- end }}
+
+4. Prometheus:
+{{- if .Values.observability.enabled }}
+{{- if .Values.observability.prometheus.enabled }}
+   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ .Release.Name }}-observability-prometheus 9090:9090
+   Then access: http://localhost:9090
+{{- end }}
+{{- end }}
+
+================================================================================
+CHECKING DEPLOYMENT STATUS
+================================================================================
+
+1. Check all pods:
+   kubectl get pods --namespace {{ .Release.Namespace }}
+
+2. Check services:
+   kubectl get services --namespace {{ .Release.Namespace }}
+
+3. Check Dapr sidecars:
+   kubectl get pods --namespace {{ .Release.Namespace }} -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .spec.containers[*]}{.name}{" "}{end}{"\n"}{end}'
+
+4. View logs for a specific service:
+   kubectl logs --namespace {{ .Release.Namespace }} -l app=todo-backend -f
+   kubectl logs --namespace {{ .Release.Namespace }} -l app=reminder-consumer -f
+
+================================================================================
+IMPORTANT NOTES
+================================================================================
+
+⚠️  SECRETS CONFIGURATION REQUIRED:
+    Before the application can work, you MUST configure secrets:
+
+    1. Create a values-local.yaml file with your actual secrets:
+       backend:
+         secrets:
+           databaseUrl: "postgresql://user:pass@host:5432/db"
+           geminiApiKey: "your-api-key"
+           betterAuthSecret: "your-secret-key"
+
+    2. Upgrade the release with your secrets:
+       helm upgrade {{ .Release.Name }} ./helm/todo-app -f values-local.yaml
+
+⚠️  DAPR REQUIRED:
+    This application requires Dapr to be installed in the cluster.
+    Install Dapr: https://docs.dapr.io/getting-started/install-dapr-kubernetes/
+
+⚠️  POSTGRESQL DATABASE:
+    The application requires an external PostgreSQL database (Neon).
+    Ensure DATABASE_URL is configured correctly.
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Configure secrets (see above)
+2. Wait for all pods to become ready
+3. Access the frontend application
+4. Set up Grafana dashboards for monitoring
+5. Review application logs for any issues
+
+For more information, visit: https://github.com/your-org/todo-app
+
+================================================================================
