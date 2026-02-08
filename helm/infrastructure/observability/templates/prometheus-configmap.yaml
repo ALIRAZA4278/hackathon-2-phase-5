@@ -1,0 +1,46 @@
+{{- if .Values.prometheus.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "observability.fullname" . }}-prometheus-config
+  labels:
+    {{- include "observability.prometheus.labels" . | nindent 4 }}
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: {{ .Values.prometheus.scrapeInterval }}
+      evaluation_interval: {{ .Values.prometheus.evaluationInterval }}
+
+    scrape_configs:
+      # Backend service
+      - job_name: 'todo-backend'
+        static_configs:
+          - targets: ['todo-backend:8000']
+        metrics_path: '/metrics'
+
+      # Consumer services
+      - job_name: 'reminder-consumer'
+        static_configs:
+          - targets: ['reminder-consumer:8080']
+        metrics_path: '/metrics'
+
+      - job_name: 'recurring-consumer'
+        static_configs:
+          - targets: ['recurring-consumer:8080']
+        metrics_path: '/metrics'
+
+      - job_name: 'audit-consumer'
+        static_configs:
+          - targets: ['audit-consumer:8080']
+        metrics_path: '/metrics'
+
+      - job_name: 'notification-consumer'
+        static_configs:
+          - targets: ['notification-consumer:8080']
+        metrics_path: '/metrics'
+
+      # Prometheus self-monitoring
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+{{- end }}

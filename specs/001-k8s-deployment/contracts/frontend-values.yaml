@@ -1,0 +1,97 @@
+# Frontend Helm Chart Values Schema
+# File: helm/frontend/values.yaml
+#
+# This document defines the expected structure and defaults for the frontend
+# Helm chart values.yaml file.
+
+# ============================================================================
+# Image Configuration
+# ============================================================================
+image:
+  repository: todo-frontend    # Docker image name
+  tag: "1.0.0"                 # Image tag (explicit, no 'latest')
+  pullPolicy: IfNotPresent     # IfNotPresent for local images
+
+# ============================================================================
+# Replica Configuration
+# ============================================================================
+replicaCount: 1                # Number of pod replicas (1-3 typical)
+
+# ============================================================================
+# Service Configuration
+# ============================================================================
+service:
+  type: NodePort               # NodePort for Minikube external access
+  port: 3000                   # Service port
+  targetPort: 3000             # Container port
+  # nodePort: auto             # Kubernetes assigns automatically
+
+# ============================================================================
+# Resource Limits
+# ============================================================================
+resources:
+  requests:
+    cpu: 100m                  # Minimum CPU (100 millicores)
+    memory: 128Mi              # Minimum memory (128 MiB)
+  limits:
+    cpu: 500m                  # Maximum CPU (500 millicores)
+    memory: 512Mi              # Maximum memory (512 MiB)
+
+# ============================================================================
+# Environment Variables (Non-Sensitive)
+# ============================================================================
+env:
+  NODE_ENV: production
+  # NEXT_PUBLIC_API_URL set via ConfigMap
+
+# ============================================================================
+# ConfigMap Data
+# ============================================================================
+config:
+  NEXT_PUBLIC_API_URL: "http://todo-backend:8000"
+
+# ============================================================================
+# Probes
+# ============================================================================
+livenessProbe:
+  enabled: true
+  path: /
+  port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  path: /
+  port: 3000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# ============================================================================
+# Pod Configuration
+# ============================================================================
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+# ============================================================================
+# Service Account (optional)
+# ============================================================================
+serviceAccount:
+  create: false
+  name: ""
+
+# ============================================================================
+# Node Selection (optional)
+# ============================================================================
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

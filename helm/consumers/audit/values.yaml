@@ -1,0 +1,92 @@
+# Audit Consumer Helm Chart Values
+# File: helm/consumers/audit/values.yaml
+
+# ============================================================================
+# Image Configuration
+# ============================================================================
+image:
+  repository: ghcr.io/todo-app/audit-consumer
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# ============================================================================
+# Replica Configuration
+# ============================================================================
+replicaCount: 1
+
+# ============================================================================
+# Service Configuration
+# ============================================================================
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+# ============================================================================
+# Dapr Configuration
+# ============================================================================
+dapr:
+  enabled: true
+  appId: "audit-consumer"
+  appPort: 8080
+  logLevel: "info"
+
+# ============================================================================
+# Resource Limits
+# ============================================================================
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+# ============================================================================
+# Environment Variables
+# ============================================================================
+env:
+  DATABASE_URL: ""
+  KAFKA_BROKER: "redpanda:9092"
+  KAFKA_TOPIC: "todo.audit"
+
+# ============================================================================
+# Probes
+# ============================================================================
+livenessProbe:
+  enabled: true
+  path: /health
+  port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  path: /health
+  port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# ============================================================================
+# Pod Configuration
+# ============================================================================
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# ============================================================================
+# Node Selection (optional)
+# ============================================================================
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

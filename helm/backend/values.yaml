@@ -1,0 +1,112 @@
+# Backend Helm Chart Values
+# File: helm/backend/values.yaml
+#
+# IMPORTANT: Actual secret values should be in values-local.yaml (gitignored)
+
+# ============================================================================
+# Image Configuration
+# ============================================================================
+image:
+  repository: todo-backend
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+# ============================================================================
+# Replica Configuration
+# ============================================================================
+replicaCount: 1
+
+# ============================================================================
+# Service Configuration
+# ============================================================================
+service:
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+
+# ============================================================================
+# Resource Limits
+# ============================================================================
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# ============================================================================
+# Environment Variables (Non-Sensitive)
+# ============================================================================
+env:
+  PORT: "8000"
+
+# ============================================================================
+# ConfigMap Data (Non-Sensitive)
+# ============================================================================
+config:
+  FRONTEND_URL: "http://todo-frontend:3000"
+
+# ============================================================================
+# Secrets (Sensitive - Override in values-local.yaml)
+# ============================================================================
+# DO NOT put actual values here - use values-local.yaml (gitignored)
+secrets:
+  databaseUrl: ""
+  geminiApiKey: ""
+  betterAuthSecret: ""
+
+# ============================================================================
+# Dapr Configuration
+# ============================================================================
+dapr:
+  enabled: true
+  appId: "todo-backend"
+  appPort: 8000
+  logLevel: "info"
+
+# ============================================================================
+# Probes
+# ============================================================================
+livenessProbe:
+  enabled: true
+  path: /health
+  port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  path: /health
+  port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# ============================================================================
+# Pod Configuration
+# ============================================================================
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+# ============================================================================
+# Service Account (optional)
+# ============================================================================
+serviceAccount:
+  create: false
+  name: ""
+
+# ============================================================================
+# Node Selection (optional)
+# ============================================================================
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

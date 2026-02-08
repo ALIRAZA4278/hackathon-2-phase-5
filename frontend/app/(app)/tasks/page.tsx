@@ -4,13 +4,11 @@
  * Tasks page - Main task management interface.
  * Per specs/ui/pages.md and specs/features/task-crud.md
  */
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSession, getApiToken } from "@/lib/auth";
-import { tasksApi, Task, TaskCreate, TaskUpdate, ApiException } from "@/lib/api";
+import { tasksApi, Task, TaskCreate, TaskUpdate, TaskQueryParams, ApiException } from "@/lib/api";
 import { Button, ToastProvider, useToast } from "@/components/ui";
 import { TaskList, TaskForm, DeleteConfirmModal } from "@/components/todo";
-
-type FilterType = "all" | "active" | "completed";
 
 function TasksPageContent() {
   const { data: session } = useSession();
@@ -27,9 +25,9 @@ function TasksPageContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [token, setToken] = useState<string | null>(null);
 
-  // Filter and search state
-  const [filter, setFilter] = useState<FilterType>("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  // Query params from TaskList (search, filter, sort)
+  const [queryParams, setQueryParams] = useState<Partial<TaskQueryParams>>({});
+  const queryParamsRef = useRef(queryParams);
 
   // Get user ID and name from session
   const userId = session?.user?.id;
@@ -46,53 +44,42 @@ function TasksPageContent() {
     fetchToken();
   }, [session]);
 
-  // Fetch tasks
-  const fetchTasks = useCallback(async () => {
-    if (!userId || !token) return;
+  // Fetch tasks with optional query params
+  const fetchTasks = useCallback(
+    async (params?: Partial<TaskQueryParams>) => {
+      if (!userId || !token) return;
 
-    try {
-      setIsLoading(true);
-      const response = await tasksApi.list(userId, token);
-      setTasks(response.tasks);
-    } catch (error) {
-      if (error instanceof ApiException) {
-        showToast(error.detail, "error");
-      } else {
-        showToast("Failed to load tasks", "error");
+      try {
+        setIsLoading(true);
+        const response = await tasksApi.list(userId, token, params);
+        setTasks(response.tasks);
+      } catch (error) {
+        if (error instanceof ApiException) {
+          showToast(error.detail, "error");
+        } else {
+          showToast("Failed to load tasks", "error");
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId, token, showToast]);
+    },
+    [userId, token, showToast]
+  );
 
   // Load tasks on mount
   useEffect(() => {
-    fetchTasks();
+    fetchTasks(queryParamsRef.current);
   }, [fetchTasks]);
 
-  // Filter and search tasks
-  const filteredTasks = useMemo(() => {
-    let result = tasks;
-
-    // Apply filter
-    if (filter === "active") {
-      result = result.filter((t) => !t.completed);
-    } else if (filter === "completed") {
-      result = result.filter((t) => t.completed);
-    }
-
-    // Apply search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.title.toLowerCase().includes(query) ||
-          t.description?.toLowerCase().includes(query)
-      );
-    }
-
-    return result;
-  }, [tasks, filter, searchQuery]);
+  // Handle query param changes from TaskList
+  const handleQueryParamsChange = useCallback(
+    (params: Partial<TaskQueryParams>) => {
+      setQueryParams(params);
+      queryParamsRef.current = params;
+      fetchTasks(params);
+    },
+    [fetchTasks]
+  );
 
   // Task statistics
   const stats = useMemo(() => {
@@ -353,99 +340,18 @@ function TasksPageContent() {
           </div>
         )}
 
-        {/* Search and Filter */}
-        {stats.total > 0 && (
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search Bar */}
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            {/* Filter Tabs */}
-            <div className="flex bg-gray-100 rounded-xl p-1">
-              {(["all", "active", "completed"] as FilterType[]).map((filterOption) => (
-                <button
-                  key={filterOption}
-                  onClick={() => setFilter(filterOption)}
-                  className={`
-                    px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200
-                    ${filter === filterOption
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                    }
-                  `}
-                >
-                  {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
-                  {filterOption !== "all" && (
-                    <span className={`ml-1.5 text-xs ${filter === filterOption ? "text-blue-600" : "text-gray-400"}`}>
-                      ({filterOption === "active" ? stats.active : stats.completed})
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Task list */}
+      {/* Task list with integrated search, filters, and sort */}
       <TaskList
-        tasks={filteredTasks}
+        tasks={tasks}
         isLoading={isLoading}
         onToggleComplete={handleToggleComplete}
         onEdit={openEditForm}
         onDelete={openDeleteModal}
         onCreateClick={openCreateForm}
+        onQueryParamsChange={handleQueryParamsChange}
       />
-
-      {/* No results message */}
-      {!isLoading && filteredTasks.length === 0 && tasks.length > 0 && (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-1">No tasks found</h3>
-          <p className="text-gray-500">
-            {searchQuery
-              ? `No tasks match "${searchQuery}"`
-              : `No ${filter} tasks to display`}
-          </p>
-          {(searchQuery || filter !== "all") && (
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setFilter("all");
-              }}
-              className="mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-      )}
 
       {/* Create/Edit form modal */}
       <TaskForm

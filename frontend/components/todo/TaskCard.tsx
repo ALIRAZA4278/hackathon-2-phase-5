@@ -2,7 +2,7 @@
 
 /**
  * TaskCard component for displaying a single task.
- * Per specs/ui/components.md
+ * Per specs/ui/components.md - Phase V extended with priority, tags, due date, reminder.
  */
 import { useState, useRef, useEffect } from "react";
 import { Task } from "@/lib/api";
@@ -16,44 +16,41 @@ interface TaskCardProps {
   onClick?: (task: Task) => void;
 }
 
-// Simulated priority based on task title/content (in a real app, this would come from the API)
-function getTaskPriority(task: Task): "high" | "medium" | "low" {
-  const title = task.title.toLowerCase();
-  if (title.includes("urgent") || title.includes("important") || title.includes("asap")) {
-    return "high";
-  }
-  if (title.includes("soon") || title.includes("review") || title.includes("update")) {
-    return "medium";
-  }
-  return "low";
-}
-
-// Get priority styling
-function getPriorityConfig(priority: "high" | "medium" | "low") {
+// Get priority styling based on actual task.priority field
+function getPriorityConfig(priority: "low" | "medium" | "high" | "urgent") {
   switch (priority) {
-    case "high":
+    case "urgent":
       return {
-        label: "High",
+        label: "Urgent",
         bgColor: "bg-red-50",
         textColor: "text-red-700",
         borderColor: "border-red-200",
         dotColor: "bg-red-500",
       };
+    case "high":
+      return {
+        label: "High",
+        bgColor: "bg-orange-50",
+        textColor: "text-orange-700",
+        borderColor: "border-orange-200",
+        dotColor: "bg-orange-500",
+      };
     case "medium":
       return {
         label: "Medium",
-        bgColor: "bg-amber-50",
-        textColor: "text-amber-700",
-        borderColor: "border-amber-200",
-        dotColor: "bg-amber-500",
+        bgColor: "bg-blue-50",
+        textColor: "text-blue-700",
+        borderColor: "border-blue-200",
+        dotColor: "bg-blue-500",
       };
     case "low":
+    default:
       return {
         label: "Low",
-        bgColor: "bg-green-50",
-        textColor: "text-green-700",
-        borderColor: "border-green-200",
-        dotColor: "bg-green-500",
+        bgColor: "bg-gray-50",
+        textColor: "text-gray-600",
+        borderColor: "border-gray-200",
+        dotColor: "bg-gray-400",
       };
   }
 }
@@ -69,14 +66,16 @@ export function TaskCard({
   const [isHovered, setIsHovered] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const priority = getTaskPriority(task);
+  const priority = task.priority || "medium";
   const priorityConfig = getPriorityConfig(priority);
 
   // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
@@ -102,10 +101,30 @@ export function TaskCard({
     return formatDate(dateString);
   };
 
+  // Format due date with overdue detection
+  const formatDueDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const isDueDateOverdue = (dateString: string) => {
+    return new Date(dateString) < new Date();
+  };
+
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
         setIsMenuOpen(false);
       }
     };
@@ -119,9 +138,10 @@ export function TaskCard({
       className={`
         group relative bg-white border rounded-xl p-4 overflow-visible
         transition-all duration-200 ease-out
-        ${task.completed
-          ? "border-gray-100 bg-gray-50/50"
-          : "border-gray-200 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5"
+        ${
+          task.completed
+            ? "border-gray-100 bg-gray-50/50"
+            : "border-gray-200 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5"
         }
         ${isHovered && !task.completed ? "scale-[1.01]" : "scale-100"}
       `}
@@ -137,13 +157,19 @@ export function TaskCard({
 
       <div className="flex items-start gap-4 pl-3">
         {/* Drag Handle (visual placeholder) */}
-        <div className={`
+        <div
+          className={`
           flex-shrink-0 pt-1.5 cursor-grab active:cursor-grabbing
           transition-opacity duration-200
           ${isHovered ? "opacity-100" : "opacity-0"}
-        `}>
-          <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
+        `}
+        >
+          <svg
+            className="w-4 h-4 text-gray-400"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
           </svg>
         </div>
 
@@ -152,7 +178,9 @@ export function TaskCard({
           <Checkbox
             checked={task.completed}
             onChange={() => onToggleComplete(task.id)}
-            aria-label={`Mark "${task.title}" as ${task.completed ? "incomplete" : "complete"}`}
+            aria-label={`Mark "${task.title}" as ${
+              task.completed ? "incomplete" : "complete"
+            }`}
           />
         </div>
 
@@ -165,9 +193,10 @@ export function TaskCard({
           <h3
             className={`
               font-medium leading-snug transition-colors duration-200
-              ${task.completed
-                ? "line-through text-gray-400"
-                : "text-gray-900 group-hover:text-blue-600"
+              ${
+                task.completed
+                  ? "line-through text-gray-400"
+                  : "text-gray-900 group-hover:text-blue-600"
               }
             `}
           >
@@ -187,7 +216,7 @@ export function TaskCard({
           )}
 
           {/* Meta info row */}
-          <div className="mt-3 flex items-center gap-3 flex-wrap">
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
             {/* Priority Badge */}
             <span
               className={`
@@ -196,21 +225,104 @@ export function TaskCard({
                 ${task.completed ? "opacity-50" : ""}
               `}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${priorityConfig.dotColor}`} />
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${priorityConfig.dotColor}`}
+              />
               {priorityConfig.label}
             </span>
 
-            {/* Category Tag (simulated) */}
-            {!task.completed && task.description && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                Task
+            {/* Tags as chips/pills */}
+            {task.tags &&
+              task.tags.length > 0 &&
+              task.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className={`
+                    inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                    bg-blue-50 text-blue-700
+                    ${task.completed ? "opacity-50" : ""}
+                  `}
+                >
+                  {tag}
+                </span>
+              ))}
+
+            {/* Due Date */}
+            {task.due_date && (
+              <span
+                className={`
+                  inline-flex items-center gap-1 text-xs
+                  ${
+                    task.completed
+                      ? "text-gray-400"
+                      : isDueDateOverdue(task.due_date)
+                        ? "text-red-600 font-medium"
+                        : "text-gray-500"
+                  }
+                `}
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                {!task.completed && isDueDateOverdue(task.due_date)
+                  ? `Overdue: ${formatDueDate(task.due_date)}`
+                  : formatDueDate(task.due_date)}
               </span>
             )}
 
-            {/* Date */}
-            <span className={`text-xs ${task.completed ? "text-gray-400" : "text-gray-500"}`}>
-              <svg className="inline-block w-3.5 h-3.5 mr-1 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            {/* Reminder Indicator */}
+            {task.reminder_time && (
+              <span
+                className={`
+                  inline-flex items-center gap-1 text-xs
+                  ${task.completed ? "text-gray-400" : "text-amber-600"}
+                `}
+                title={`Reminder: ${formatDueDate(task.reminder_time)}`}
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  />
+                </svg>
+              </span>
+            )}
+
+            {/* Created date */}
+            <span
+              className={`text-xs ${
+                task.completed ? "text-gray-400" : "text-gray-500"
+              }`}
+            >
+              <svg
+                className="inline-block w-3.5 h-3.5 mr-1 -mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               {getRelativeTime(task.created_at)}
             </span>
@@ -230,8 +342,18 @@ export function TaskCard({
               `}
               aria-label="Mark as complete"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </button>
           )}
@@ -242,9 +364,10 @@ export function TaskCard({
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className={`
                 p-2 rounded-lg transition-all duration-200
-                ${isMenuOpen
-                  ? "text-gray-600 bg-gray-100"
-                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                ${
+                  isMenuOpen
+                    ? "text-gray-600 bg-gray-100"
+                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                 }
               `}
               aria-label="Task options"
@@ -306,15 +429,35 @@ export function TaskCard({
                 >
                   {task.completed ? (
                     <>
-                      <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      <svg
+                        className="h-4 w-4 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
                       </svg>
                       Mark incomplete
                     </>
                   ) : (
                     <>
-                      <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="h-4 w-4 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                       Mark complete
                     </>

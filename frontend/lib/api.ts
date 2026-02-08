@@ -1,53 +1,31 @@
 /**
  * API client with JWT token attachment.
- * Per specs/api/rest-endpoints.md
+ * Per specs/api/rest-endpoints.md and specs/002-cloud-native-platform/contracts/tasks-api.md
  */
+import type {
+  Task,
+  TaskListResponse,
+  TaskCreate,
+  TaskUpdate,
+  TaskQueryParams,
+  Reminder,
+  ReminderCreate,
+  ApiError,
+} from "@/types/task";
+
+// Re-export types for backward compatibility
+export type {
+  Task,
+  TaskListResponse,
+  TaskCreate,
+  TaskUpdate,
+  TaskQueryParams,
+  Reminder,
+  ReminderCreate,
+  ApiError,
+};
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-/**
- * Task type matching backend TaskResponse schema.
- */
-export interface Task {
-  id: number;
-  user_id: string;
-  title: string;
-  description: string | null;
-  completed: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Task list response type.
- */
-export interface TaskListResponse {
-  tasks: Task[];
-  count: number;
-}
-
-/**
- * Task create request type.
- */
-export interface TaskCreate {
-  title: string;
-  description?: string | null;
-}
-
-/**
- * Task update request type.
- */
-export interface TaskUpdate {
-  title: string;
-  description?: string | null;
-}
-
-/**
- * API error type.
- */
-export interface ApiError {
-  detail: string;
-}
 
 /**
  * Custom error class for API errors.
@@ -109,13 +87,38 @@ async function apiRequest<T>(
  */
 export const tasksApi = {
   /**
-   * List all tasks for the user.
+   * List all tasks for the user with optional query parameters.
    * GET /api/{userId}/tasks
+   * Backward compatible: params argument is optional.
    */
-  list: async (userId: string, token: string): Promise<TaskListResponse> => {
-    return apiRequest<TaskListResponse>(`/api/${userId}/tasks`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  list: async (
+    userId: string,
+    token: string,
+    params?: Partial<TaskQueryParams>
+  ): Promise<TaskListResponse> => {
+    let queryString = "";
+    if (params) {
+      const searchParams = new URLSearchParams();
+      if (params.search) searchParams.set("search", params.search);
+      if (params.status && params.status !== "all")
+        searchParams.set("status", params.status);
+      if (params.priority) searchParams.set("priority", params.priority);
+      if (params.tags) searchParams.set("tags", params.tags);
+      if (params.due_date_from)
+        searchParams.set("due_date_from", params.due_date_from);
+      if (params.due_date_to)
+        searchParams.set("due_date_to", params.due_date_to);
+      if (params.sort_by) searchParams.set("sort_by", params.sort_by);
+      if (params.sort_order) searchParams.set("sort_order", params.sort_order);
+      const qs = searchParams.toString();
+      if (qs) queryString = `?${qs}`;
+    }
+    return apiRequest<TaskListResponse>(
+      `/api/${userId}/tasks${queryString}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
   },
 
   /**
@@ -189,5 +192,43 @@ export const tasksApi = {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+
+  /**
+   * Set a reminder for a task.
+   * POST /api/{userId}/tasks/{taskId}/reminder
+   */
+  setReminder: async (
+    userId: string,
+    taskId: number,
+    data: ReminderCreate,
+    token: string
+  ): Promise<Reminder> => {
+    return apiRequest<Reminder>(
+      `/api/${userId}/tasks/${taskId}/reminder`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      }
+    );
+  },
+
+  /**
+   * Cancel a reminder for a task.
+   * DELETE /api/{userId}/tasks/{taskId}/reminder
+   */
+  cancelReminder: async (
+    userId: string,
+    taskId: number,
+    token: string
+  ): Promise<void> => {
+    await apiRequest<void>(
+      `/api/${userId}/tasks/${taskId}/reminder`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
   },
 };

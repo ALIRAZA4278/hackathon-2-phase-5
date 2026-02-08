@@ -1,0 +1,192 @@
+# Todo App Umbrella Chart Values
+# File: helm/todo-app/values.yaml
+#
+# This is the main values file for the complete Phase V Cloud-Native AI Todo Platform.
+# Override sub-chart values using the chart alias as the key.
+
+# ============================================================================
+# Global Configuration (shared across all sub-charts)
+# ============================================================================
+global:
+  # Database connection string (shared by backend and consumers)
+  databaseUrl: ""
+  # Kafka broker address
+  kafkaBroker: "redpanda:9092"
+
+# ============================================================================
+# Backend Service Configuration
+# ============================================================================
+backend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: todo-backend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  dapr:
+    enabled: true
+    appId: "todo-backend"
+    appPort: 8000
+    logLevel: "info"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Override secrets in values-local.yaml
+  secrets:
+    databaseUrl: ""
+    geminiApiKey: ""
+    betterAuthSecret: ""
+
+# ============================================================================
+# Frontend Service Configuration
+# ============================================================================
+frontend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: todo-frontend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: NodePort
+  dapr:
+    enabled: true
+    appId: "todo-frontend"
+    appPort: 3000
+    logLevel: "info"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ============================================================================
+# Consumer Services Configuration
+# ============================================================================
+reminder:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/todo-app/reminder-consumer
+    tag: "latest"
+  dapr:
+    enabled: true
+    appId: "reminder-consumer"
+    appPort: 8080
+  env:
+    DATABASE_URL: ""
+    KAFKA_BROKER: "redpanda:9092"
+    KAFKA_TOPIC: "todo.reminders"
+
+recurring:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/todo-app/recurring-consumer
+    tag: "latest"
+  dapr:
+    enabled: true
+    appId: "recurring-consumer"
+    appPort: 8080
+  env:
+    DATABASE_URL: ""
+    KAFKA_BROKER: "redpanda:9092"
+    KAFKA_TOPIC: "todo.recurring"
+
+audit:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/todo-app/audit-consumer
+    tag: "latest"
+  dapr:
+    enabled: true
+    appId: "audit-consumer"
+    appPort: 8080
+  env:
+    DATABASE_URL: ""
+    KAFKA_BROKER: "redpanda:9092"
+    KAFKA_TOPIC: "todo.audit"
+
+notification:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/todo-app/notification-consumer
+    tag: "latest"
+  dapr:
+    enabled: true
+    appId: "notification-consumer"
+    appPort: 8080
+  env:
+    DATABASE_URL: ""
+    KAFKA_BROKER: "redpanda:9092"
+    KAFKA_TOPIC: "todo.notifications"
+
+# ============================================================================
+# Infrastructure Services Configuration
+# ============================================================================
+redpanda:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: redpandadata/redpanda
+    tag: "latest"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  persistence:
+    enabled: true
+    size: 10Gi
+
+redis:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: redis
+    tag: "7-alpine"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+# ============================================================================
+# Observability Stack Configuration
+# ============================================================================
+observability:
+  enabled: true
+  prometheus:
+    enabled: true
+    image:
+      repository: prom/prometheus
+      tag: "v2.48.0"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  grafana:
+    enabled: true
+    image:
+      repository: grafana/grafana
+      tag: "10.2.2"
+    service:
+      type: NodePort
+      nodePort: 32000
+    adminUser: admin
+    adminPassword: admin  # Override in production

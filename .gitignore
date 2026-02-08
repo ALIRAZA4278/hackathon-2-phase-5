@@ -89,3 +89,15 @@ temp/
 # Misc
 # ===========================================
 nul
+
+# ===========================================
+# Kubernetes / Helm (Phase IV)
+# ===========================================
+# Helm local secrets (NEVER COMMIT)
+helm/**/values-local.yaml
+*.secret.yaml
+secrets/
+.kube/
+kubeconfig*
+*.key
+*.crt

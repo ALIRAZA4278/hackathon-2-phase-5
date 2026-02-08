@@ -12,9 +12,18 @@ python-jose[cryptography]>=3.3.0
 
 # Environment configuration
 python-dotenv>=1.0.0
+pydantic-settings>=2.0.0
 
 # CORS support (included with fastapi)
 # Pydantic (included with fastapi/sqlmodel)
 
 # AI Chatbot (Phase III)
 openai>=1.50.0
+
+# Phase V: Cloud-Native Platform
+httpx>=0.27.0
+dapr>=1.14.0
+prometheus-client>=0.21.0
+opentelemetry-api>=1.27.0
+opentelemetry-sdk>=1.27.0
+opentelemetry-instrumentation-fastapi>=0.48b0
