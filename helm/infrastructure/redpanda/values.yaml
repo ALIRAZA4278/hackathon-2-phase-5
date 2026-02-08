@@ -60,9 +60,14 @@ config:
 # ============================================================================
 podAnnotations: {}
 
-podSecurityContext: {}
+podSecurityContext:
+  fsGroup: 101
+  runAsUser: 101
+  runAsGroup: 101
 
-securityContext: {}
+securityContext:
+  runAsUser: 101
+  runAsGroup: 101
 
 # ============================================================================
 # Node Selection (optional)

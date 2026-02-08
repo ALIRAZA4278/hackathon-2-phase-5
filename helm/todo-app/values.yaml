@@ -153,6 +153,13 @@ redpanda:
   persistence:
     enabled: true
     size: 10Gi
+  podSecurityContext:
+    fsGroup: 101
+    runAsUser: 101
+    runAsGroup: 101
+  securityContext:
+    runAsUser: 101
+    runAsGroup: 101
 
 redis:
   enabled: true
